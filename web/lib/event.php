@@ -43,14 +43,21 @@ const EVENT = [
 ];
 
 /**
- * Hosting provider (processor, Art. 28 DSGVO) for the privacy policy
- * (Hetzner webhosting). log_retention: as configured in konsoleH;
- * null = not yet checked (page shows a placeholder, --prelaunch fails).
+ * Hosting provider (processor, Art. 28 DSGVO) for the privacy policy, as
+ * documented by Hetzner (checked 2026-10-27, sources in docs/recht.md):
+ * - access and error logs (www_logs) store IP addresses anonymised
+ * - www_logs are NOT deleted by default; an account maintenance rule in
+ *   konsoleH (domain → Einstellungen → Accountwartung → Weblogs) deletes them
+ * - the DPA (AV-Vertrag) is not concluded automatically (Hetzner terms)
+ * - processing only in the EU/EEA (AV-Vertrag § 3)
+ * confirmed: owner has concluded the DPA and set the log rule to
+ * log_retention for every domain serving the site; --prelaunch fails until then.
  */
 const HOSTING = [
     'name'          => 'Hetzner Online GmbH',
     'address'       => 'Industriestr. 25, 91710 Gunzenhausen',
-    'log_retention' => null, // e.g. ['de' => '7 Tage', 'en' => '7 days']
+    'log_retention' => ['de' => '7 Tagen', 'en' => '7 days'],
+    'confirmed'     => false,
 ];
 
 /**

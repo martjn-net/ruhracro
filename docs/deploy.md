@@ -9,9 +9,10 @@ WebFTP/SFTP.
    mit Name, Anschrift, E-Mail, optional Telefon und USt-IdNr. Die Datei ist
    per `.gitignore` ausgeschlossen (personenbezogene Daten, Repo-Regel). Sie
    speist Impressum, Datenschutz und den Footer („Organisation und Website“).
-2. **Hosting-Angaben:** Log-Speicherdauer in konsoleH prüfen und in
-   `HOSTING['log_retention']` (`web/lib/event.php`) eintragen;
-   Auftragsverarbeitungsvertrag mit Hetzner abschließen ([recht.md](recht.md)).
+2. **Hosting-Angaben:** In konsoleH den Auftragsverarbeitungsvertrag schließen
+   und per Accountwartung die Weblogs nach 7 Tagen löschen lassen (Standard:
+   nie), dann `HOSTING['confirmed'] => true` in `web/lib/event.php`
+   ([recht.md](recht.md)).
 3. **Domain:** `ruhracro.de` in konsoleH anlegen; DNS (A/AAAA) auf den
    Webspace; PHP ≥ 8.1 wählen. Stand 2026-10-27: noch kein DNS-Eintrag.
 4. **Docroot:** konsoleH → Domain → Einstellungen → Docroot auf

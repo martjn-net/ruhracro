@@ -25,9 +25,15 @@ Stand 2026-10-27. Technisch fertig: 12 Seiten (DE + EN), Tests grün
       vorbelegt (Vorname laut Owner,
       Nachname von buchsys) – bestätigen. Telefon empfohlen; USt-IdNr.
       eintragen, falls vorhanden (gewerblich).
-- [ ] **Log-Speicherdauer** bei Hetzner (konsoleH) prüfen und in
-      `HOSTING['log_retention']` in `web/lib/event.php` eintragen.
-- [ ] **Auftragsverarbeitungsvertrag** mit Hetzner in konsoleH abschließen.
+- [ ] **Hetzner, in konsoleH (Quellen: [docs/recht.md](docs/recht.md)):**
+      1. Auftragsverarbeitungsvertrag abschließen (Kundenkonto,
+         accounts.hetzner.com) – wird laut Hetzner-AGB nicht automatisch geschlossen.
+      2. Je Domain (ruhracro.de **und** martjn.net für die Vorschau):
+         Einstellungen → Accountwartung → Weblogs nach **7 Tagen** löschen.
+         Standard bei Hetzner: nie löschen – die Datenschutzerklärung nennt 7 Tage.
+      3. Danach in `web/lib/event.php` `HOSTING['confirmed'] => true`.
+      Optional: eine Logdatei in `www_logs` ansehen und prüfen, ob die Felder
+      zur Aufzählung in der Datenschutzerklärung passen.
 - [ ] **Hochschulsport UDE abstimmen:** Nennung als Veranstalter, Formulierung
       „Verkauf ausschließlich über den Hochschulsport“, Link von buchsys bzw.
       der UDE-Seite auf ruhracro.de.

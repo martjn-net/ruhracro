@@ -45,10 +45,26 @@ Social Plugins, Google Fonts). Die Erklärung ist entsprechend kurz:
    Hochschulsport)
 5. Betroffenenrechte und Beschwerderecht
 
-Offen: Die Speicherdauer der Logs steht nicht fest. Bis sie in konsoleH
-geprüft und in `HOSTING['log_retention']` (`web/lib/event.php`) eingetragen
-ist, zeigt die Seite einen Platzhalter und `run_tests.php --prelaunch` schlägt
-fehl. Den Auftragsverarbeitungsvertrag mit Hetzner in konsoleH abschließen.
+### Hosting-Fakten (Hetzner-Doku, geprüft 2026-10-27)
+
+| Thema | Befund | Quelle |
+|---|---|---|
+| IP in Logs | Zugriffs- und Fehlerprotokolle speichern IP-Adressen anonymisiert | [Webserverkonfiguration in konsoleH](https://docs.hetzner.com/de/managed/webserver/webserver-configuration-konsoleh/) |
+| Speicherdauer | `www_logs` werden standardmäßig **nicht** gelöscht; Löschfrist per Accountwartung je Domain einstellbar | [Accountwartung](https://docs.hetzner.com/de/managed/administration-on-konsoleh/account-maintenance/) |
+| Auftragsverarbeitung | wird nicht automatisch geschlossen, Abschluss über das Kundenkonto | [Hetzner-AGB](https://www.hetzner.com/de/legal/terms-and-conditions/) |
+| Ort der Verarbeitung | ausschließlich EU/EWR, Drittland nur mit Zustimmung (§ 3) | [AV-Vertrag v1.1](https://www.hetzner.com/AV/DPA_de.pdf) |
+| Anschrift | Hetzner Online GmbH, Industriestr. 25, 91710 Gunzenhausen | Hetzner-Impressum, AV-Vertrag |
+
+Daraus folgt die Datenschutzerklärung: IP wird zur Auslieferung verarbeitet,
+in den Logs nur anonymisiert gespeichert, Logs nach **7 Tagen** gelöscht,
+Hetzner als Auftragsverarbeiter, keine Drittlandübermittlung. Die 7 Tage
+stimmen erst, wenn die Accountwartungs-Regel gesetzt ist; deshalb
+`HOSTING['confirmed']` in `web/lib/event.php` – `run_tests.php --prelaunch`
+schlägt fehl, bis Vertrag und Regel erledigt und bestätigt sind.
+
+Die Aufzählung der Log-Felder („in der Regel …“) beschreibt das übliche
+Apache-Format; Hetzner dokumentiert das Format nicht. Prüfbar über eine Datei
+in `www_logs`.
 
 ## Englische Fassung
 

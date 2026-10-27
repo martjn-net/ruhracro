@@ -195,6 +195,13 @@ foreach (["$B/gibtsnicht" => 'de', "$B/en/nope" => 'en'] as $uri => $l) {
 check(str_contains($pages['de']['tickets'], 'Diese Website verkauft nichts'), 'tickets de: no-sale notice');
 check(str_contains($pages['en']['tickets'], 'This website sells nothing'), 'tickets en: no-sale notice');
 check(str_contains($pages['de']['impressum'], 'Kein Verkauf über diese Website'), 'impressum: no-sale section');
+// privacy policy (Art. 13 DSGVO): concrete log retention and the hosting processor, no placeholder
+foreach (LANGS as $l) {
+    lang($l);
+    $html = $pages[$l]['datenschutz'];
+    check(str_contains($html, e(L(HOSTING['log_retention']))) && !str_contains($html, '[SPEICHERDAUER') && !str_contains($html, '[LOG RETENTION'), "datenschutz $l: log retention stated");
+    check(str_contains($html, e(HOSTING['name'])) && str_contains($html, 'Art. 28'), "datenschutz $l: hosting processor named");
+}
 
 // home: event data follows Google's Event rich-result rules
 foreach (LANGS as $l) {
@@ -254,7 +261,7 @@ foreach (PAGES as $id => $page) {
 
 if ($prelaunch) {
     foreach (PROVIDER as $k => $v) check(!str_contains($v, '['), "prelaunch: PROVIDER[$k] filled in");
-    check(HOSTING['log_retention'] !== null, 'prelaunch: HOSTING log_retention checked in konsoleH');
+    check(HOSTING['confirmed'], 'prelaunch: Hetzner DPA concluded and www_logs maintenance rule set (HOSTING confirmed)');
     $ht = file_get_contents($public . '/.htaccess');
     check(!str_contains($ht, '# RewriteCond %{HTTPS} off'), 'prelaunch: HTTPS redirect enabled');
 }
