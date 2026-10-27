@@ -65,7 +65,7 @@ bzw. `$ACRO_DEPLOY_CONFIG`, Vorlage `deploy.example.php`); ohne Angabe
 Refactorings werden gegen einen Render-Schnappschuss aller Routen in allen
 drei Test-Konfigurationen geprüft (Ausgabe bis auf Leerraum gleich) und die
 Bildpipeline gegen SHA256 aller Dateien in `web/public/img/` (zuletzt
-2026-10-27: alle 40 Dateien byte-identisch).
+2026-10-27: alle 32 Dateien byte-identisch).
 
 ## Mehrsprachigkeit
 
