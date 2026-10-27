@@ -6,7 +6,8 @@ Stand 2026-10-27. Gemessen lokal gegen Apache mit der echten `.htaccess`
 ## Wiederholen
 
 ```bash
-php web/tests/run_tests.php                    # Vertragstests, < 1 s
+php web/tests/run_tests.php                    # Vertragstests, < 1 s (Design classic)
+ACRO_DEPLOY_CONFIG=web/tests/deploy-scene.php php web/tests/run_tests.php   # Design scene
 
 cd web/tests/browser
 npm ci && npx playwright install chromium firefox webkit
@@ -23,7 +24,11 @@ Gegenprobe: Mit entferntem Phone-Fallback meldet `check.mjs`
 
 `check.mjs`: 3 Engines × 4 Viewports × 12 Seiten (DE + EN), Klick auf das
 Flaggen-Toggle (DE → EN → DE, gleiche Seite), Navigation höchstens zwei
-Zeilen, dazu Fallback-Simulation. Letzter Lauf 2026-10-27: alles bestanden.
+Zeilen, dazu Fallback-Simulation. Das Design liest das Skript aus der Seite:
+bei `scene` zusätzlich Header-Band direkt unter der Navigation, höchstens
+halbe Fensterhöhe, mittig, Footer-Band schließt die Seite ab. Letzter Lauf
+2026-10-27: beide Designs bestanden (Dev-Server), `scene` zusätzlich als
+Unterordner-Paket unter Apache.
 
 | Engine | steht für | Desktop 1440 | iPhone 13 | 320×640 | Quer 844×390 |
 |---|---|---|---|---|---|

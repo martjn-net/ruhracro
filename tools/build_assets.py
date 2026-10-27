@@ -20,6 +20,23 @@ CACHE = ROOT / "tools/.cache"
 OUT = ROOT / "web/public/img"
 FONTS = ROOT / "web/public/fonts"
 BG = np.array([0, 25, 19], np.float32)  # panel green, measured: #001913
+# Redesign bands, 1x px. Header: scene from just above the sun (top edge
+# y~385), fading into panel green right under the acrobats; the "Essen" brush
+# that starts at y=1043 is replaced by a soft shadow. Footer: the bottom plants
+# with their full sprays (from below the venue line, y=1278), rising out of
+# panel green over a long fade; centre medallions, labels, brushes and lotus
+# removed.
+HEAD = (0, 376, 1403, 1095)
+HEAD_FADE = (1035, 1095)
+HEAD_BRUSH = (380, 1036, 1030, 1162)
+HEAD_KEEP = 1028  # nothing above this row is darkened (the acrobats)
+FOOT = (0, 1260, 1403, 1753)
+FOOT_FADE = (1260, 1460)
+FOOT_ZONE = (250, 1245, 1150, 1747)
+# Side bleed per side relative to the core. Both band cores share one CSS
+# column: min(100% - 2 x min(200px, 14%), --head-max x core ratio); 0.6 x core
+# per side covers viewports up to 2.2 x the column width.
+BLEED = 0.6
 
 
 # ---------------------------------------------------------------- helpers
@@ -214,6 +231,99 @@ def letterbox(poster, W, H):
     return card
 
 
+def ellipse(k):
+    k = int(k) | 1
+    return cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (k, k))
+
+
+def vfade(img, s, box, fade, top, lift=0.0):
+    """Fade a cropped band into panel green towards its bottom (or top) edge.
+    `lift` (per column, 1x px) starts the fade earlier, e.g. in the bleed."""
+    y = np.arange(int(box[1] * s), int(box[3] * s))[:, None] / s
+    start = fade[0] - lift if not top else fade[0]
+    end = fade[1] if not top else fade[1] + lift
+    t = smooth((y - start) / (end - start))
+    t = (1 - t if top else t)[..., None]
+    return img.astype(np.float32) * (1 - t) + BG * t
+
+
+def bleed_distance(w, r, ramp=0.2):
+    """Per column of a bled band: 0 inside the core .. 1 at ramp*w outside."""
+    e = round(r * w)
+    x = np.arange(w + 2 * e, dtype=np.float32)
+    return (np.maximum(e - x, x - (e + w - 1)).clip(0) / (ramp * w)).clip(0, 1)[None, :]
+
+
+def crop(img, s, box):
+    x0, y0, x1, y1 = [int(v * s) for v in box]
+    return img[y0:y1, x0:x1]
+
+
+def head_band(img, s):
+    """Scene without lettering; the brush becomes shadow, bottom turns panel green.
+    The fade runs after the side bleed so the bottom edge is panel green across
+    the full width."""
+    x0, y0, x1, y1 = [int(v * s) for v in HEAD_BRUSH]
+    sub = img[y0:y1, x0:x1].astype(np.float32)
+    warm = ((lum(sub) > 140) & (sub[..., 0] > sub[..., 2] + 40)).astype(np.uint8)
+    warm = cv2.morphologyEx(warm, cv2.MORPH_CLOSE, ellipse(5 * s))
+    n, lab, st, _ = cv2.connectedComponentsWithStats(warm, 8)
+    big = np.zeros(n, bool)
+    big[1:] = st[1:, 4] > 5000 * s * s
+    brush = big[lab].astype(np.uint8)
+    # Fill enclosed holes (lettering, pin icon).
+    n, lab, st, _ = cv2.connectedComponentsWithStats(1 - brush, 4)
+    h, w = brush.shape
+    for i in range(1, n):
+        bx, by, bw, bh, _ = st[i]
+        if bx > 0 and by > 0 and bx + bw < w and by + bh < h:
+            brush[lab == i] = 1
+    m = np.zeros(img.shape[:2], np.float32)
+    m[y0:y1, x0:x1] = brush
+    m = cv2.GaussianBlur(cv2.dilate(m, ellipse(10 * s)), (0, 0), 14 * s)
+    y = np.arange(img.shape[0])[:, None] / s
+    m = (np.clip(m * 1.6, 0, 1) * smooth((y - HEAD_KEEP) / 14))[..., None]
+    out = img.astype(np.float32) * (1 - m) + BG * m
+    core = np.clip(crop(out, s, HEAD), 0, 255).astype(np.uint8)
+    band = bleed(core)
+    # The blurred bleed carries sky and water light down to the fade; start
+    # fading it up to 120 rows earlier so the sides darken as softly as the core.
+    lift = 120 * smooth(bleed_distance(core.shape[1], BLEED))
+    return np.clip(vfade(band, s, HEAD, HEAD_FADE, top=False, lift=lift), 0, 255).astype(np.uint8)
+
+
+def foot_band(img, s):
+    """Bottom plants; centre lettering and lotus become panel green, top fades in."""
+    m = stage_mask(img, [int(v * s) for v in FOOT_ZONE], s, pad=12, feather=8, tol=22)[..., None]
+    out = img.astype(np.float32) * (1 - m) + BG * m
+    core = np.clip(crop(out, s, FOOT), 0, 255).astype(np.uint8)
+    return np.clip(vfade(bleed(core), s, FOOT, FOOT_FADE, top=True), 0, 255).astype(np.uint8)
+
+
+def bleed(core, r=BLEED, mirror=0.2, inner=0.06, ramp=0.2, sigma_max=240):
+    """Extend a band left/right by r*width. Up to `mirror`*width the edge
+    content is mirrored, beyond that its outermost column runs on (no mirrored
+    acrobats in wide bleeds). Blur starts `inner`*width inside the core and
+    reaches 120 px (2x) at `ramp`*width outside, then keeps growing: no visible
+    line between sharp and blurred; the centre stays untouched."""
+    h, w = core.shape[:2]
+    e, m, n = round(r * w), round(min(mirror, r) * w), round(inner * w)
+    ext = cv2.copyMakeBorder(core.astype(np.float32), 0, 0, m, m, cv2.BORDER_REFLECT)
+    ext = cv2.copyMakeBorder(ext, 0, 0, e - m, e - m, cv2.BORDER_REPLICATE)
+    sig = np.array([0, 6, 16, 36, 70, 120, 180, sigma_max], np.float32)
+    layers = [ext] + [cv2.GaussianBlur(ext, (0, 0), float(v), borderType=cv2.BORDER_REPLICATE) for v in sig[1:]]
+    x = np.arange(w + 2 * e, dtype=np.float32)
+    d = np.maximum(e + n - x, x - (e + w - 1 - n)).clip(0) / (ramp * w + n)
+    want = np.minimum(d ** 1.5 * 120, sigma_max)
+    i = (np.searchsorted(sig, want, side="right") - 1).clip(0, len(sig) - 2)
+    t = ((want - sig[i]) / (sig[i + 1] - sig[i])).clip(0, 1)[None, :, None]
+    out = np.zeros_like(ext)
+    for k in range(len(sig) - 1):
+        sel = i == k
+        out[:, sel] = layers[k][:, sel] * (1 - t[:, sel]) + layers[k + 1][:, sel] * t[:, sel]
+    return np.clip(out, 0, 255).astype(np.uint8)
+
+
 def save(arr, name, width=None, quality=86, lossless=False):
     im = Image.fromarray(arr) if isinstance(arr, np.ndarray) else arr
     if width and width < im.width:
@@ -221,6 +331,9 @@ def save(arr, name, width=None, quality=86, lossless=False):
     path = OUT / name
     if path.suffix == ".jpg":
         im.convert("RGB").save(path, "JPEG", quality=quality, optimize=True, progressive=True)
+    elif path.suffix == ".avif":
+        # 4:4:4 keeps the thin gold rim lights on the dark figures crisp.
+        im.save(path, "AVIF", quality=quality, subsampling="4:4:4", speed=4)
     else:
         im.save(path, "WEBP", quality=quality, method=6, lossless=lossless)
     return {"file": name, "w": im.width, "h": im.height, "kb": path.stat().st_size // 1024}
@@ -255,6 +368,13 @@ def main():
         report.append(save(art45, f"art-4x5-{w}.webp", w))
     for w in (1800, 1200, 800):
         report.append(save(art916, f"art-9x16-{w}.webp", w))
+
+    # Redesign: header and footer bands with baked side bleed. Core pixels are
+    # untouched poster pixels (no grading); widths are the full band incl. bleed.
+    for name, band in (("head", head_band(p45, s)), ("foot", foot_band(p45, s))):
+        for w in (6173, 4000, 2600, 1600):
+            report.append(save(band, f"{name}-{w}.avif", w, quality=75))
+            report.append(save(band, f"{name}-{w}.webp", w, quality=90))
 
     # Icon medallions and lotus from the 4:5 poster.
     for name, box in {"workshops": (312, 1272, 492, 1446),

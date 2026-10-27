@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 page_head('home', [ld_event(), ld_website()], 'home');
-?>
+if (DESIGN === 'classic'): ?>
 <div class="layout">
 <header class="hero">
   <div class="hero__core">
@@ -36,8 +36,28 @@ page_head('home', [ld_event(), ld_website()], 'home');
     </div>
   </div>
 </header>
+<?php endif; ?>
 
 <main id="inhalt">
+<?php if (DESIGN === 'scene'): /* header band comes from page_head(); facts as text below it */ ?>
+  <section class="section welcome" aria-labelledby="titel">
+    <h1 id="titel"><?= e(EVENT['name']) ?> <span class="welcome__sub"><?= e(L(EVENT['subtitle'])) ?> <?= t('in Essen', 'in Essen, Germany') ?></span></h1>
+    <p class="welcome__when">
+      <span class="welcome__place"><?= icon('pin') ?> Essen</span>
+<?php if (lang() === 'en'): ?>
+      <span><time datetime="2027-03-05">5</time>–<time datetime="2027-03-07">7 March 2027</time></span>
+<?php else: ?>
+      <span><time datetime="2027-03-05">5.</time>–<time datetime="2027-03-07">7. März 2027</time></span>
+<?php endif; ?>
+    </p>
+    <p class="welcome__venue"><span><?= e(L(EVENT['days_label'])) ?></span> <span><?= e(VENUE['name']) ?>, <?= e(VENUE['zip'] . ' ' . VENUE['city']) ?></span></p>
+    <div class="welcome__actions">
+      <?= ext(EVENT['booking_url'], tr('Jetzt buchen', 'Book now'), 'btn', icon('ticket')) ?>
+      <a class="link" href="<?= e(page_url('programm')) ?>"><?= t('Programm ansehen', 'See the programme') ?></a>
+    </div>
+    <p class="welcome__host"><?= t('Veranstalter', 'Hosted by') ?>: <?= e(L(EVENT['organizer'])) ?></p>
+  </section>
+<?php endif; ?>
   <section class="section" aria-labelledby="festival">
     <h2 id="festival"><?= t('Drei Tage Acro im Ruhrgebiet', 'Three days of acro in the Ruhr area') ?></h2>
     <p class="lead"><?= t(
@@ -99,5 +119,7 @@ page_head('home', [ld_event(), ld_website()], 'home');
     </div>
   </section>
 </main>
+<?php if (DESIGN === 'classic'): ?>
 </div>
-<?php page_foot();
+<?php endif;
+page_foot();

@@ -32,12 +32,34 @@ web/
 ├── public/                 ← Docroot
 │   ├── index.php           ← Front-Controller: route() → serve()
 │   ├── .htaccess robots.txt
-│   ├── assets/site.css, flag-de.svg, flag-en.svg   ← Cache-Busting über ?v=<md5>
+│   ├── assets/site.css, scene.css, flag-de.svg, flag-en.svg   ← Cache-Busting über ?v=<md5>
 │   ├── img/  fonts/        ← Build-Ergebnis (build.md), nicht im Repo
 ├── tests/run_tests.php     ← Vertragstests (.htaccess: denied); tests/browser/check.mjs
+│   deploy-scene.php, deploy-subfolder.php   ← Test-Konfigurationen
 ├── dev-router.php          ← lokaler Ersatz für .htaccess bei `php -S`
 └── Dockerfile.dev          ← lokales Apache wie Hetzner (nicht deployen)
 ```
+
+## Zwei Designs
+
+Noch ist nicht entschieden, welches Design live geht; beide lassen sich
+jederzeit bauen. Inhalte, Routen, Sprachumschalter, SEO, JSON-LD, Sitemap und
+Rechtstexte sind identisch – nur der Rahmen der Seite unterscheidet sich.
+
+| | `classic` (Standard) | `scene` |
+|---|---|---|
+| Startseite | Poster als Hero, Ort und Datum auf den Pinseln, Split-Layout auf Desktop | Header-Band, darunter Titel, Ort, Datum, Buttons als Text |
+| Unterseiten | Navigation, Inhalt, Footer | Navigation, Header-Band, Inhalt, Footer mit Pflanzen-Band |
+| Navigation | sticky | sticky, direkt über dem Header-Band |
+| Stylesheets | `site.css` | `site.css` + `scene.css` (überschreibt nur den Rahmen) |
+| Bilder | `art-*`, `medal-*`, `lotus` | `head-*`, `foot-*`, `medal-*`, `lotus` |
+
+Auswahl über den Schlüssel `design` der Deploy-Konfiguration (`deploy.php`
+bzw. `$ACRO_DEPLOY_CONFIG`, Vorlage `deploy.example.php`); ohne Angabe
+`classic`. Im Code verzweigen nur `page_head()`/`page_foot()`/`band()` in
+`render.php` und der Hero-Block in `pages/home.php` über die Konstante
+`DESIGN`. Die Klassik-Ausgabe ist durch die Umstellung byte-identisch
+geblieben (geprüft 2026-10-27).
 
 ## Mehrsprachigkeit
 
@@ -93,6 +115,8 @@ alle Regeln stehen in `route()` und werden ohne Server getestet.
 ```bash
 # schnell, ohne Apache:
 php -S 127.0.0.1:8931 -t web/public web/dev-router.php
+# Design scene parallel:
+ACRO_DEPLOY_CONFIG=web/tests/deploy-scene.php php -S 127.0.0.1:8936 -t web/public web/dev-router.php
 
 # wie Produktion (.htaccess, gzip, Header):
 docker build -f web/Dockerfile.dev -t ruhracro-web web
@@ -102,7 +126,8 @@ docker run --rm -p 127.0.0.1:8932:80 -v "$PWD/web:/var/www/site:ro" ruhracro-web
 ## Tests
 
 ```bash
-php web/tests/run_tests.php              # Pflicht vor jedem Upload
+php web/tests/run_tests.php              # Pflicht vor jedem Upload (Design classic)
+ACRO_DEPLOY_CONFIG=web/tests/deploy-scene.php php web/tests/run_tests.php   # Design scene
 php web/tests/run_tests.php --prelaunch  # zusätzlich: Impressum-Daten + HTTPS
 ```
 
@@ -114,5 +139,8 @@ und Footer, Buchungs- und Instagram-Link, externe Links mit `_blank` und
 Inline-Styles, gültiges JSON-LD, Event-Markup nur auf `/`, Event-Bilder
 ≥ 720 px vorhanden, Preload-URL gleich `@font-face`-URL, alle 30
 Timetable-Slots als Text, lückenloser Zeitplan, entfernte Inhalte („Infos
-folgen“, „Termin speichern“, `.ics`, OSM-Suchlink) bleiben weg.
+folgen“, „Termin speichern“, `.ics`, OSM-Suchlink) bleiben weg. Je Design:
+`scene.css` und Bänder nur in `scene` (Header-Band zwischen Navigation und
+Inhalt, Footer-Band im Footer, alle Bandbilder vorhanden), Poster-Hero nur in
+`classic`.
 Läuft ohne die PHP-Erweiterungen dom, xml und mbstring.

@@ -7,6 +7,12 @@ Website der **Ruhr Acro Convention 2027** (Acroyoga & Akrobatik Festival,
 `https://ruhracro.de`, Deutsch (Standard) und Englisch (`/en`).
 Gesamtdoku: `docs/README.md`. Offene Aufgaben: `TODO.md`.
 
+**Zwei Designs, beide jederzeit baubar** (Entscheidung offen): `classic`
+(Poster als Hero) und `scene` (Header-/Footer-Band aus dem Poster). Gleiche
+Inhalte, Routen, SEO; nur der Rahmen unterscheidet sich. Auswahl über den
+Schlüssel `design` der Deploy-Konfiguration (`docs/architektur.md`). Keines
+der beiden darf kaputtgehen: Tests immer für beide laufen lassen.
+
 ## Struktur
 
 ```
@@ -14,10 +20,10 @@ web/lib/event.php        ← ALLE Fakten + Seitenregister PAGES (einzige Stelle 
 web/lib/render.php       ← Router, Sprache (t/tr/L), Layout, Toggle, JSON-LD, Sitemap
 web/lib/provider.php     ← Betreiber-Daten, NICHT im Repo (Vorlage: provider.example.php)
 web/pages/*.php          ← Seitenvorlagen, DE und EN nebeneinander
-web/public/              ← Docroot: index.php (Front-Controller), .htaccess, assets/; img/ fonts/ = Build-Ergebnis
+web/public/              ← Docroot: index.php (Front-Controller), .htaccess, assets/ (site.css; scene.css nur Design scene); img/ fonts/ = Build-Ergebnis
 web/tests/run_tests.php  ← Vertragstests;  web/tests/browser/check.mjs ← Browser-Matrix
 tools/build.sh           ← Bilder + Schriften reproduzierbar bauen
-tools/bundle.sh          ← Upload-Paket für Unterordner (z. B. Vorschau martjn.net/acro)
+tools/bundle.sh          ← Upload-Paket für Unterordner: tools/bundle.sh <url> [--preview] [--design classic|scene]
 quelle/ exporte/         ← Poster, Exporte, Timetable (Binär, nicht im Repo)
 docs/                    ← Doku (Deutsch)
 ```
@@ -31,7 +37,8 @@ docs/                    ← Doku (Deutsch)
   Analytics, kein JavaScript. Externe Ziele nur als Link mit
   `target="_blank" rel="noopener"` über `ext()`.
 - **Keine Inline-Styles** (CSP `style-src 'self'`); Farben als Klassen in
-  `site.css`.
+  `site.css`. Design `scene` lädt zusätzlich `scene.css`, die nur den Rahmen
+  überschreibt; gemeinsame Komponenten bleiben in `site.css`.
 - **Assets nur per Pipeline** (`tools/build.sh`), nie von Hand. Ändern sich
   Quellbilder: Koordinaten, SHA256 und `--place-y`-Werte inkl. Fallback
   anpassen (`docs/build.md`).
@@ -49,7 +56,8 @@ docs/                    ← Doku (Deutsch)
 ## Prüfen (vor jedem Abschluss)
 
 ```bash
-php web/tests/run_tests.php                      # muss 0 failed melden
+php web/tests/run_tests.php                      # muss 0 failed melden (Design classic)
+ACRO_DEPLOY_CONFIG=web/tests/deploy-scene.php php web/tests/run_tests.php       # Design scene
 ACRO_DEPLOY_CONFIG=web/tests/deploy-subfolder.php php web/tests/run_tests.php   # Unterordner
 # bei CSS-/Layout-Änderungen zusätzlich, gegen Apache (docs/architektur.md):
 cd web/tests/browser && BASE_URL=http://127.0.0.1:8932 node check.mjs

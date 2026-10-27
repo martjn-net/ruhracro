@@ -2,6 +2,7 @@
 //   cd web/tests/browser && npm ci && npx playwright install chromium firefox webkit
 //   BASE_URL=http://127.0.0.1:8932 node check.mjs        (exit 1 on any failure)
 //   BASE_URL=http://127.0.0.1:8934/acro node check.mjs   (sub-folder bundle)
+// Works for both designs; the design is read from the page (body.scene).
 // Details and last results: docs/qualitaet.md
 import fs from 'node:fs';
 import { chromium, firefox, webkit, devices } from 'playwright';
@@ -26,7 +27,10 @@ async function measure(page) {
       .map(el => [el, el.getBoundingClientRect()])
       .filter(([, b]) => b.width > 0 && (b.height < 44 || b.width < 44))
       .map(([el, b]) => `${el.textContent.trim().slice(0, 20)} ${Math.round(b.width)}x${Math.round(b.height)}`);
+    const band = s => document.querySelector(`.band--${s} .band__core`);
+    const nav = r('.nav');
     return {
+      scene: document.body.classList.contains('scene'),
       overflow: document.documentElement.scrollWidth - innerWidth,
       fonts: [...document.fonts].filter(f => f.status === 'loaded').map(f => f.family.replace(/"/g, '')).sort().join('+'),
       sticky: getComputedStyle(document.querySelector('.nav')).position,
@@ -36,6 +40,14 @@ async function measure(page) {
       navRows: new Set([...document.querySelectorAll('.nav__brand, .lang, .btn--nav, .nav__links')]
         .map(el => Math.round(el.getBoundingClientRect().top / 20))).size,
       small,
+      // scene design: header band right below the navigation, at most half the
+      // viewport high, centred; footer band ends the page
+      head: band('head') && {
+        gap: Math.round(band('head').getBoundingClientRect().top + scrollY - (nav.bottom + scrollY)),
+        height: band('head').getBoundingClientRect().height,
+        offCentre: Math.abs(band('head').getBoundingClientRect().left + band('head').getBoundingClientRect().width / 2 - document.documentElement.clientWidth / 2),
+      },
+      footEnd: band('foot') && Math.round(document.documentElement.scrollHeight - (band('foot').getBoundingClientRect().bottom + scrollY)),
     };
   });
 }
@@ -68,7 +80,13 @@ for (const [name, engine] of Object.entries(engines)) {
       if (m.sticky !== 'sticky') fail(`${where}: nav not sticky`);
       if (m.broken) fail(`${where}: ${m.broken} broken images`);
       if (m.small.length) fail(`${where}: tap targets < 44px: ${m.small.join(', ')}`);
-      if ((p === '/' || p === '/en') && !PLACE_OK(m.placeY)) fail(`${where}: place text at ${m.placeY}% of artwork`);
+      if (!m.scene && (p === '/' || p === '/en') && !PLACE_OK(m.placeY)) fail(`${where}: place text at ${m.placeY}% of artwork`);
+      if (m.scene) {
+        if (!m.head || m.head.gap !== 0) fail(`${where}: header band not directly below the navigation (${m.head?.gap})`);
+        else if (m.head.height > viewport.height / 2 + 1) fail(`${where}: header band ${m.head.height}px > half the viewport`);
+        else if (m.head.offCentre > 1) fail(`${where}: header band off centre by ${m.head.offCentre}px`);
+        if (Math.abs(m.footEnd) > 1) fail(`${where}: footer band does not end the page (${m.footEnd}px)`); // 1px: subpixel rounding of scrollHeight
+      }
       if (m.navRows > 2) fail(`${where}: navigation wraps into ${m.navRows} rows`);
     }
     // the flag toggle switches language and keeps the page
@@ -102,7 +120,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 
   await page.goto(BASE + '/', { waitUntil: 'networkidle' });
   const m = await measure(page);
   if (m.overflow > 0) fail(`fallback ${viewport.width}: overflow ${m.overflow}px`);
-  if (!PLACE_OK(m.placeY)) fail(`fallback ${viewport.width}: place text at ${m.placeY}% of artwork`);
+  if (!m.scene && !PLACE_OK(m.placeY)) fail(`fallback ${viewport.width}: place text at ${m.placeY}% of artwork`);
   console.log(`done fallback ${viewport.width}px, place text at ${m.placeY}%`);
   await page.close();
 }

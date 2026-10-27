@@ -10,19 +10,25 @@ declare(strict_types=1);
 
 /**
  * Deployment: production is https://ruhracro.de at the domain root. Another
- * target (e.g. a preview in a sub-folder) sets site_url/preview in an
+ * target (e.g. a preview in a sub-folder) sets site_url/preview/design in an
  * untracked lib/deploy.php or the file named by $ACRO_DEPLOY_CONFIG
  * (template: deploy.example.php; tools/bundle.sh writes one).
+ * Two designs share content, routing and SEO; only the page chrome differs
+ * (docs/architektur.md). Which one goes live is not decided yet.
  */
+const DESIGNS = ['classic', 'scene']; // classic: poster hero; scene: header/footer bands
 (function () {
     $file = getenv('ACRO_DEPLOY_CONFIG') ?: __DIR__ . '/deploy.php';
     $cfg = (is_file($file) ? require $file : []) + [
         'site_url' => 'https://ruhracro.de', // confirmed by owner 2026-10-27; DNS not live yet
         'preview'  => false,                 // true: noindex + "preview" banner on every page
+        'design'   => 'classic',
     ];
+    if (!in_array($cfg['design'], DESIGNS, true)) throw new InvalidArgumentException("unknown design {$cfg['design']}");
     define('SITE_URL', rtrim($cfg['site_url'], '/'));
     define('BASE_PATH', rtrim((string) parse_url(SITE_URL, PHP_URL_PATH), '/')); // '' or '/acro'
     define('PREVIEW', (bool) $cfg['preview']);
+    define('DESIGN', $cfg['design']);
 })();
 const LANGS = ['de', 'en'];             // first = default (x-default)
 

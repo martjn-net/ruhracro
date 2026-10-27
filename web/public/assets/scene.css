@@ -1,0 +1,88 @@
+/* Scene design (deploy config 'design' => 'scene'): loaded after site.css and
+   replaces only the page chrome. Every page: sticky navigation, header band
+   (poster scene), content on night green, footer content and footer band
+   (poster plants). Band images and geometry: docs/build.md.
+
+   Band geometry: the empty .band__core box sets the band height. Its width
+   is the shared column, min(100% - 2 x side bleed, header height cap); the
+   image files carry 0.6 x core of blurred side bleed per side, so
+   object-fit: cover lands the untouched core exactly on the column. The band
+   edges facing the content are baked to exactly --night: no seam. */
+
+.scene {
+  --side: min(200px, 14%);
+  --head-max: 50vh; /* header at most half the viewport; scales, never crops */
+  --core-w: min(100% - 2 * var(--side), var(--head-max) * 2806 / 1438);
+  /* same column in viewport units, for the footer overlap only */
+  --core-vw: min(max(72vw, 100vw - 400px), var(--head-max) * 2806 / 1438);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+.scene main { flex: 1 0 auto; }
+
+/* ------------------------------------------------------------ bands */
+.band { position: relative; overflow: hidden; }
+.scene .band img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.band__core { position: relative; width: var(--core-w); margin-inline: auto; }
+.band--head .band__core { aspect-ratio: 2806 / 1438; }
+.band--foot .band__core { aspect-ratio: 2806 / 986; }
+
+/* ------------------------------------------------------------ home welcome block
+   The poster lettering is not in the band; title and facts are live text. */
+.welcome h1 { margin-bottom: var(--gap-s); font-size: clamp(2.4rem, 1.4rem + 4.4vw, 4.25rem); line-height: 1.05; }
+.welcome__sub {
+  display: block;
+  margin-top: .75rem;
+  font: 800 clamp(.85rem, .75rem + .5vw, 1.05rem)/1.4 var(--body);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--sky);
+}
+.welcome__when {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0 .5em;
+  margin: var(--gap-m) 0 var(--gap-s);
+  font: 700 clamp(1.6rem, 1.1rem + 2.2vw, 2.4rem)/1.2 var(--hand);
+  color: var(--sky);
+}
+.welcome__place { display: inline-flex; align-items: center; gap: .2em; }
+.welcome__place .i { width: .8em; height: .8em; color: var(--gold); }
+.welcome__when > span + span::before { content: "·"; margin-right: .5em; color: var(--gold); }
+.welcome__venue { margin: 0 0 var(--gap-m); color: var(--text-dim); }
+.welcome__venue span { display: block; }
+.welcome__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem 1.25rem;
+  margin-bottom: var(--gap-m);
+}
+.welcome__host { margin: 0; font-size: .92rem; color: var(--text-dim); }
+
+/* ------------------------------------------------------------ footer
+   Footer text sits on night green; the plants band follows and its dark top
+   slides under the last lines, so the text stands among the plants. */
+.scene .footer {
+  position: relative;
+  padding-bottom: 0;
+  border-top: 0;
+}
+.scene .footer > :not(.band) { position: relative; z-index: 1; }
+.scene .footer .band {
+  justify-self: stretch;
+  margin: calc(-.3 * var(--core-vw) * 986 / 2806) -1.25rem 0;
+}

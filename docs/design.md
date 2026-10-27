@@ -14,10 +14,20 @@ per Pipeline ([build.md](build.md)).
 
 ## Leitidee
 
-**Das Poster ist die Startseite.** Das Info-Panel des Posters ist zu flachem
-Nachtgrün ausgemalt; die Seite setzt dieses Grün nahtlos fort. Ort und Datum
-stehen als echter Text auf den leeren Original-Pinselstrichen. Unterseiten
-sind ruhige Textseiten im selben Farbraum.
+Zwei Designs, Entscheidung offen ([architektur.md](architektur.md#zwei-designs)):
+
+- **`classic` – das Poster ist die Startseite.** Das Info-Panel des Posters
+  ist zu flachem Nachtgrün ausgemalt; die Seite setzt dieses Grün nahtlos
+  fort. Ort und Datum stehen als echter Text auf den leeren
+  Original-Pinselstrichen. Unterseiten sind ruhige Textseiten im selben
+  Farbraum.
+- **`scene` – die Poster-Szene rahmt jede Seite.** Oben die Szene mit Sonne,
+  Skyline und Akrobaten (ohne Schrift), unten die Pflanzen; beide laufen
+  nahtlos ins Nachtgrün, seitlich mit unscharfem Farbüberlauf. Dazwischen
+  beliebig langer Text. Der Header ist höchstens halb so hoch wie das Fenster
+  und wird dafür gleichmäßig verkleinert, nie beschnitten oder verzerrt; die
+  sticky Navigation sitzt direkt darüber. Titel, Ort und Datum stehen auf der
+  Startseite als Text unter dem Header. Bildaufbereitung: [build.md](build.md).
 
 ## Tokens (aus Poster und Exporten gemessen)
 

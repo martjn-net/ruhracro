@@ -177,10 +177,14 @@ function page_head(string $id, array $jsonld = [], string $bodyClass = ''): void
 <?php /* same URL as the @font-face in site.css, otherwise the font loads twice */ ?>
 <link rel="preload" href="<?= e(public_url('/fonts/kalam-700-latin.woff2')) ?>" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="<?= e(asset('assets/site.css')) ?>">
+<?php if (DESIGN === 'scene'): ?>
+<link rel="stylesheet" href="<?= e(asset('assets/scene.css')) ?>">
+<?php endif; ?>
 <?php foreach ($jsonld as $block): ?>
 <script type="application/ld+json"><?= json_encode($block, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?></script>
 <?php endforeach; ?>
 </head>
+<?php $bodyClass = trim($bodyClass . (DESIGN === 'scene' ? ' scene' : '')); ?>
 <body<?= $bodyClass ? ' class="' . e($bodyClass) . '"' : '' ?>>
 <a class="skip" href="#inhalt"><?= t('Zum Inhalt springen', 'Skip to content') ?></a>
 <?php if (PREVIEW): ?>
@@ -191,6 +195,31 @@ function page_head(string $id, array $jsonld = [], string $bodyClass = ''): void
 <?php endif; ?>
 <?php
     site_nav($id);
+    if (DESIGN === 'scene') band('head');
+}
+
+/**
+ * Scene design: header or footer band, a decorative poster crop with baked
+ * side bleed (tools/build_assets.py, docs/build.md). The empty core box
+ * sizes the band; scene.css lays the picture over it with object-fit: cover.
+ * sizes = 2.2 x core width; core = min(max(72vw, 100vw - 400px), 50vh x 2806/1438).
+ */
+function band(string $name): void
+{
+    $height = ['head' => 1438, 'foot' => 986][$name]; // of the 6173 px wide file
+    $set = fn (string $ext): string => implode(', ', array_map(
+        fn (int $w): string => public_url("/img/$name-$w.$ext") . " {$w}w", [1600, 2600, 4000, 6173]));
+    $sizes = 'min(max(158vw, 220vw - 880px), 215vh)';
+    ?>
+<div class="band band--<?= e($name) ?>">
+  <picture>
+    <source type="image/avif" srcset="<?= e($set('avif')) ?>" sizes="<?= $sizes ?>">
+    <img src="<?= e(public_url("/img/$name-2600.webp")) ?>" srcset="<?= e($set('webp')) ?>" sizes="<?= $sizes ?>"
+         width="6173" height="<?= $height ?>" alt=""<?= $name === 'head' ? ' fetchpriority="high"' : ' loading="lazy"' ?> decoding="async">
+  </picture>
+  <div class="band__core"></div>
+</div>
+<?php
 }
 
 function site_nav(string $id): void
@@ -247,6 +276,7 @@ function page_foot(): void
 <?php endforeach; ?>
   </nav>
   <p class="fineprint"><?= e(EVENT['name']) ?></p>
+<?php if (DESIGN === 'scene') band('foot'); ?>
 </footer>
 </body>
 </html>
