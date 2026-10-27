@@ -31,23 +31,39 @@ function t(string $de, string $en): string
     return e(tr($de, $en));
 }
 
+/** Public path of a page (with BASE_PATH), for links. */
 function page_url(string $id, ?string $lang = null): string
 {
-    return PAGES[$id][$lang ?? lang()][0];
+    return BASE_PATH . PAGES[$id][$lang ?? lang()][0];
+}
+
+/** Absolute URL of a page, for canonical, hreflang, JSON-LD, sitemap. */
+function abs_url(string $id, ?string $lang = null): string
+{
+    return SITE_URL . PAGES[$id][$lang ?? lang()][0];
+}
+
+/** Public path of a static file below the docroot, e.g. '/img/x.webp'. */
+function public_url(string $path): string
+{
+    return BASE_PATH . $path;
 }
 
 /* --------------------------------------------------------------- routing */
 
 /**
- * Pure routing: URI -> ['redirect' => path] or ['page', 'lang', 'status'].
- * Every page URL comes from PAGES; anything else is a 404 in the language of
- * its prefix.
+ * Pure routing: URI -> ['redirect' => public path] or ['page', 'lang', 'status'].
+ * Strips BASE_PATH; every page URL comes from PAGES; anything else is a 404
+ * in the language of its prefix.
  */
 function route(string $uri): array
 {
-    $path = parse_url($uri, PHP_URL_PATH) ?: '/';
-    if ($path === '/index.php') return ['redirect' => '/'];
-    if ($path !== '/' && str_ends_with($path, '/')) return ['redirect' => rtrim($path, '/') ?: '/'];
+    $full = parse_url($uri, PHP_URL_PATH) ?: '/';
+    if (BASE_PATH !== '' && $full === BASE_PATH) return ['redirect' => BASE_PATH . '/'];
+    if (BASE_PATH !== '' && !str_starts_with($full, BASE_PATH . '/')) return ['page' => '404', 'lang' => LANGS[0], 'status' => 404];
+    $path = substr($full, strlen(BASE_PATH));
+    if ($path === '/index.php') return ['redirect' => BASE_PATH . '/'];
+    if ($path !== '/' && str_ends_with($path, '/')) return ['redirect' => BASE_PATH . (rtrim($path, '/') ?: '/')];
     if ($path === '/sitemap.xml') return ['page' => 'sitemap', 'lang' => LANGS[0], 'status' => 200];
     foreach (PAGES as $id => $page) {
         foreach (LANGS as $l) {
@@ -98,11 +114,17 @@ function icon(string $name): string
     return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' . $paths[$name] . '</svg>';
 }
 
+/** Directory served as docroot (front controller sets it; tests use the repo layout). */
+function public_dir(): string
+{
+    return defined('PUBLIC_DIR') ? PUBLIC_DIR : __DIR__ . '/../public';
+}
+
 function asset(string $path): string
 {
-    // cache-busting by content hash; site.css is served with a 1-year max-age
-    $file = __DIR__ . '/../public/' . $path;
-    return '/' . $path . (is_file($file) ? '?v=' . substr(md5_file($file), 0, 8) : '');
+    // cache-busting by content hash; site.css and flags are served with a 1-year max-age
+    $file = public_dir() . '/' . $path;
+    return public_url('/' . $path) . (is_file($file) ? '?v=' . substr(md5_file($file), 0, 8) : '');
 }
 
 /* ---------------------------------------------------------------- layout */
@@ -124,15 +146,16 @@ function page_head(string $id, array $jsonld = [], string $bodyClass = ''): void
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title><?= e($title) ?></title>
-<?php if (!$found): ?>
+<?php if (!$found || PREVIEW): ?>
 <meta name="robots" content="noindex">
-<?php else: ?>
+<?php endif; ?>
+<?php if ($found): ?>
 <meta name="description" content="<?= e($desc) ?>">
 <link rel="canonical" href="<?= e(SITE_URL . $path) ?>">
 <?php foreach (LANGS as $l): ?>
-<link rel="alternate" hreflang="<?= e($l) ?>" href="<?= e(SITE_URL . page_url($id, $l)) ?>">
+<link rel="alternate" hreflang="<?= e($l) ?>" href="<?= e(abs_url($id, $l)) ?>">
 <?php endforeach; ?>
-<link rel="alternate" hreflang="x-default" href="<?= e(SITE_URL . page_url($id, LANGS[0])) ?>">
+<link rel="alternate" hreflang="x-default" href="<?= e(abs_url($id, LANGS[0])) ?>">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="<?= e($locale[lang()]) ?>">
 <?php foreach (LANGS as $l): if ($l !== lang()): ?>
@@ -152,7 +175,7 @@ function page_head(string $id, array $jsonld = [], string $bodyClass = ''): void
 <link rel="icon" href="<?= e(asset('img/favicon.png')) ?>" type="image/png">
 <link rel="apple-touch-icon" href="<?= e(asset('img/touch-icon.png')) ?>">
 <?php /* same URL as the @font-face in site.css, otherwise the font loads twice */ ?>
-<link rel="preload" href="/fonts/kalam-700-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="<?= e(public_url('/fonts/kalam-700-latin.woff2')) ?>" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="<?= e(asset('assets/site.css')) ?>">
 <?php foreach ($jsonld as $block): ?>
 <script type="application/ld+json"><?= json_encode($block, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?></script>
@@ -160,6 +183,12 @@ function page_head(string $id, array $jsonld = [], string $bodyClass = ''): void
 </head>
 <body<?= $bodyClass ? ' class="' . e($bodyClass) . '"' : '' ?>>
 <a class="skip" href="#inhalt"><?= t('Zum Inhalt springen', 'Skip to content') ?></a>
+<?php if (PREVIEW): ?>
+<p class="preview"><?= tr(
+    '<strong>Vorschau</strong> – Entwurf der Website, noch nicht veröffentlicht. Impressum und Datenschutz sind Platzhalter. Tickets gibt es nur beim Hochschulsport der UDE.',
+    '<strong>Preview</strong> – draft of the website, not yet published. Legal notice and privacy policy are placeholders. Tickets are sold only by UDE university sports.'
+) ?></p>
+<?php endif; ?>
 <?php
     site_nav($id);
 }
@@ -173,7 +202,7 @@ function site_nav(string $id): void
   <ul class="nav__links">
 <?php foreach (PAGES as $p => $page):
         if ($p === 'home') continue; ?>
-    <li<?= in_array($p, LEGAL_PAGES, true) ? ' class="nav__legal"' : '' ?>><a href="<?= e($page[lang()][0]) ?>"<?= $p === $id ? ' aria-current="page"' : '' ?>><?= e($page[lang()][1]) ?></a></li>
+    <li<?= in_array($p, LEGAL_PAGES, true) ? ' class="nav__legal"' : '' ?>><a href="<?= e(page_url($p)) ?>"<?= $p === $id ? ' aria-current="page"' : '' ?>><?= e($page[lang()][1]) ?></a></li>
 <?php endforeach; ?>
     <li class="nav__legal-compact"><a href="<?= e(page_url('impressum')) ?>"<?= $legal ? ' aria-current="page"' : '' ?> aria-label="<?= t('Impressum und Datenschutz', 'Legal notice and privacy') ?>"><?= t('Rechtliches', 'Legal') ?></a></li>
   </ul>
@@ -293,7 +322,7 @@ function ld_event(): array
             SITE_URL . '/img/event-4x3.jpg',
             SITE_URL . '/img/event-16x9.jpg',
         ],
-        'url' => SITE_URL . page_url('home'),
+        'url' => abs_url('home'),
         'organizer' => [
             '@type' => 'Organization',
             'name' => L(EVENT['organizer']),
@@ -323,8 +352,8 @@ function ld_breadcrumb(string $id): array
         '@context' => 'https://schema.org',
         '@type' => 'BreadcrumbList',
         'itemListElement' => [
-            ['@type' => 'ListItem', 'position' => 1, 'name' => PAGES['home'][lang()][1], 'item' => SITE_URL . page_url('home')],
-            ['@type' => 'ListItem', 'position' => 2, 'name' => PAGES[$id][lang()][1], 'item' => SITE_URL . page_url($id)],
+            ['@type' => 'ListItem', 'position' => 1, 'name' => PAGES['home'][lang()][1], 'item' => abs_url('home')],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => PAGES[$id][lang()][1], 'item' => abs_url($id)],
         ],
     ];
 }

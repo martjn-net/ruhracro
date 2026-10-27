@@ -17,6 +17,7 @@ web/pages/*.php          ← Seitenvorlagen, DE und EN nebeneinander
 web/public/              ← Docroot: index.php (Front-Controller), .htaccess, assets/; img/ fonts/ = Build-Ergebnis
 web/tests/run_tests.php  ← Vertragstests;  web/tests/browser/check.mjs ← Browser-Matrix
 tools/build.sh           ← Bilder + Schriften reproduzierbar bauen
+tools/bundle.sh          ← Upload-Paket für Unterordner (z. B. Vorschau martjn.net/acro)
 quelle/ exporte/         ← Poster, Exporte, Timetable (Binär, nicht im Repo)
 docs/                    ← Doku (Deutsch)
 ```
@@ -38,7 +39,8 @@ docs/                    ← Doku (Deutsch)
 - **Immer beide Sprachen.** Jeder sichtbare Text über `t('DE', 'EN')` /
   `tr()` oder `['de' => …, 'en' => …]` + `L()`; neue Seiten in `PAGES` mit
   Pfad, Label, Title, Description für beide Sprachen. Interne Links nur über
-  `page_url()`.
+  `page_url()`, statische Dateien über `asset()`/`public_url()` – nie
+  hartcodiert mit `/` beginnend (die Seite läuft auch in Unterordnern).
 - **Rollen eindeutig:** Veranstalter und einziger Ticketverkäufer ist der
   Hochschulsport der UDE; der Organisator betreibt die Website, die nichts
   verkauft (`docs/recht.md`). Diese Aussagen nicht abschwächen oder entfernen.
@@ -48,6 +50,7 @@ docs/                    ← Doku (Deutsch)
 
 ```bash
 php web/tests/run_tests.php                      # muss 0 failed melden
+ACRO_DEPLOY_CONFIG=web/tests/deploy-subfolder.php php web/tests/run_tests.php   # Unterordner
 # bei CSS-/Layout-Änderungen zusätzlich, gegen Apache (docs/architektur.md):
 cd web/tests/browser && BASE_URL=http://127.0.0.1:8932 node check.mjs
 ```

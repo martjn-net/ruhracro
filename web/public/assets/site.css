@@ -59,6 +59,16 @@ a { color: inherit; }
   background: var(--gold); color: var(--ink); font-weight: 800; text-decoration: none;
 }
 .skip:focus { top: .5rem; }
+/* preview deployments only (deploy config 'preview' => true) */
+.preview {
+  margin: 0;
+  padding: .6rem max(1rem, env(safe-area-inset-left));
+  background: var(--gold);
+  color: var(--ink);
+  font-size: .9rem;
+  line-height: 1.4;
+  text-align: center;
+}
 .i { width: 1.15em; height: 1.15em; flex: none; }
 
 /* ------------------------------------------------------------ navigation

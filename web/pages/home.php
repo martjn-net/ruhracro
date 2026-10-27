@@ -8,10 +8,10 @@ page_head('home', [ld_event(), ld_website()], 'home');
   <div class="hero__core">
     <picture class="hero__art">
       <source media="(max-aspect-ratio: 3/5)"
-              srcset="/img/art-9x16-800.webp 800w, /img/art-9x16-1200.webp 1200w, /img/art-9x16-1800.webp 1800w"
+              srcset="<?= e(public_url('/img/art-9x16-800.webp')) ?> 800w, <?= e(public_url('/img/art-9x16-1200.webp')) ?> 1200w, <?= e(public_url('/img/art-9x16-1800.webp')) ?> 1800w"
               sizes="100vw" width="1800" height="3200">
-      <img src="/img/art-4x5-1400.webp"
-           srcset="/img/art-4x5-1400.webp 1400w, /img/art-4x5-2000.webp 2000w, /img/art-4x5-2806.webp 2806w"
+      <img src="<?= e(public_url('/img/art-4x5-1400.webp')) ?>"
+           srcset="<?= e(public_url('/img/art-4x5-1400.webp')) ?> 1400w, <?= e(public_url('/img/art-4x5-2000.webp')) ?> 2000w, <?= e(public_url('/img/art-4x5-2806.webp')) ?> 2806w"
            sizes="(max-aspect-ratio: 4/5) 100vw, max(80svh, 32rem)"
            width="2806" height="3506" alt="" fetchpriority="high">
     </picture>
@@ -46,19 +46,19 @@ page_head('home', [ld_event(), ld_website()], 'home');
     ) ?></p>
     <ul class="offer">
       <li class="accent-mint">
-        <img src="/img/medal-workshops.webp" width="240" height="239" alt="" loading="lazy" decoding="async">
+        <img src="<?= e(public_url('/img/medal-workshops.webp')) ?>" width="240" height="239" alt="" loading="lazy" decoding="async">
         <h3>Workshops</h3>
         <p><?= t('8 Workshop-Blöcke, mehrere parallel, mit unterschiedlichen Schwerpunkten und Levels.',
                  '8 workshop blocks, several in parallel, with different focuses and levels.') ?></p>
       </li>
       <li class="accent-gold">
-        <img src="/img/medal-community.webp" width="240" height="240" alt="" loading="lazy" decoding="async">
+        <img src="<?= e(public_url('/img/medal-community.webp')) ?>" width="240" height="240" alt="" loading="lazy" decoding="async">
         <h3>Community</h3>
         <p><?= t('Welcome und Closing Circle, gemeinsame Pausen, neue Trainingspartner. Respekt verbindet.',
                  'Welcome and closing circle, shared breaks, new training partners. Respect connects.') ?></p>
       </li>
       <li class="accent-lilac">
-        <img src="/img/medal-jams.webp" width="240" height="239" alt="" loading="lazy" decoding="async">
+        <img src="<?= e(public_url('/img/medal-jams.webp')) ?>" width="240" height="239" alt="" loading="lazy" decoding="async">
         <h3>Jams</h3>
         <p><?= t('In jeder Mittags- und Abendpause wird gejammt: freies Training mit Longen für Fortgeschrittene.',
                  'Every lunch and evening break is jam time: open training with lunges (safety lines) for advanced moves.') ?></p>

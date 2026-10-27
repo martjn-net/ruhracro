@@ -14,3 +14,7 @@ web/tests/browser/node_modules/
 
 # personal data for Impressum/Datenschutz (template: provider.example.php)
 web/lib/provider.php
+
+# upload bundles (tools/bundle.sh)
+dist/
+web/lib/deploy.php

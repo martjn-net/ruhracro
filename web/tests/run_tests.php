@@ -42,18 +42,23 @@ function between(string $html, string $open, string $close): string
     return $s === false ? '' : substr($html, $s, strpos($html, $close, $s) - $s);
 }
 
-$public = __DIR__ . '/../public';
+$public = public_dir();
 $css = file_get_contents($public . '/assets/site.css');
+$B = BASE_PATH; // '' in production, e.g. '/acro' for a sub-folder preview
 
 // routing: one URL per page and language, everything else redirects or 404s
-check(route('/programm/') === ['redirect' => '/programm'], 'route: trailing slash redirects');
-check(route('/en/') === ['redirect' => '/en'], 'route: /en/ redirects to /en');
-check(route('/index.php') === ['redirect' => '/'], 'route: /index.php redirects');
-check(route('/programm.php')['status'] === 404, 'route: old .php URLs are gone');
-check(route('/gibtsnicht') === ['page' => '404', 'lang' => 'de', 'status' => 404], 'route: unknown -> German 404');
-check(route('/en/nope') === ['page' => '404', 'lang' => 'en', 'status' => 404], 'route: unknown /en/ -> English 404');
-check(route('/en/programme?x=1') === ['page' => 'programm', 'lang' => 'en', 'status' => 200], 'route: query string ignored');
+check(route("$B/programm/") === ['redirect' => "$B/programm"], 'route: trailing slash redirects');
+check(route("$B/en/") === ['redirect' => "$B/en"], 'route: /en/ redirects to /en');
+check(route("$B/index.php") === ['redirect' => "$B/"], 'route: /index.php redirects');
+check(route("$B/programm.php")['status'] === 404, 'route: old .php URLs are gone');
+check(route("$B/gibtsnicht") === ['page' => '404', 'lang' => 'de', 'status' => 404], 'route: unknown -> German 404');
+check(route("$B/en/nope") === ['page' => '404', 'lang' => 'en', 'status' => 404], 'route: unknown /en/ -> English 404');
+check(route("$B/en/programme?x=1") === ['page' => 'programm', 'lang' => 'en', 'status' => 200], 'route: query string ignored');
 check(PAGES['home']['de'][0] === '/', 'German is the default language at /');
+if ($B !== '') {
+    check(route($B) === ['redirect' => "$B/"], 'route: base path without slash redirects');
+    check(route('/programm')['status'] === 404, 'route: paths outside the base path are 404');
+}
 
 // German UI text must not leak into English pages and vice versa
 const LEAKS = [
@@ -66,7 +71,7 @@ foreach (PAGES as $id => $page) {
     foreach (LANGS as $l) {
         [$path, $label, $title, $desc] = $page[$l];
         $where = "$l $path";
-        $html = render($path);
+        $html = render(page_url($id, $l));
         $pages[$l][$id] = $html;
         $nav = between($html, '<nav class="nav"', '</nav>');
         $toggle = between($html, '<ul class="lang"', '</ul>');
@@ -91,8 +96,8 @@ foreach (PAGES as $id => $page) {
 
         // flag toggle: links to this page in both languages, current one marked
         foreach (LANGS as $other) {
-            check(str_contains($toggle, 'href="' . $page[$other][0] . '"'), "$where: toggle links $other version");
-            check(str_contains($toggle, 'src="/assets/flag-' . $other . '.svg'), "$where: toggle shows $other flag");
+            check(str_contains($toggle, 'href="' . page_url($id, $other) . '"'), "$where: toggle links $other version");
+            check(str_contains($toggle, 'src="' . $B . '/assets/flag-' . $other . '.svg'), "$where: toggle shows $other flag");
         }
         check(substr_count($toggle, 'aria-current="true"') === 1 && preg_match('~hreflang="' . $l . '"[^>]*aria-current="true"~', $toggle) === 1, "$where: toggle marks current language");
 
@@ -101,15 +106,21 @@ foreach (PAGES as $id => $page) {
         foreach (tags($rest, 'a') as $a) {
             $href = $a['href'] ?? '';
             if (!str_starts_with($href, '/') || isset($a['lang'])) continue;
-            $isEn = $href === '/en' || str_starts_with($href, '/en/');
+            // every internal link must carry the base path (sub-folder deployments)
+            check($href === "$B/" || str_starts_with($href, "$B/"), "$where: internal link $href inside base path");
+            $rel = substr($href, strlen($B));
+            $isEn = $rel === '/en' || str_starts_with($rel, '/en/');
             check($l === 'en' ? $isEn : !$isEn, "$where: internal link $href in page language");
         }
 
         // navigation: always present, legal pages always linked
         foreach (LEGAL_PAGES as $legal) {
-            check(str_contains($nav, 'href="' . PAGES[$legal][$l][0] . '"'), "$where: nav links $legal");
-            check(str_contains($footer, 'href="' . PAGES[$legal][$l][0] . '"'), "$where: footer links $legal");
+            check(str_contains($nav, 'href="' . page_url($legal, $l) . '"'), "$where: nav links $legal");
+            check(str_contains($footer, 'href="' . page_url($legal, $l) . '"'), "$where: footer links $legal");
         }
+        // preview deployments: banner and noindex on every page; production: neither
+        check(str_contains($html, '<p class="preview">') === PREVIEW, "$where: preview banner only in preview mode");
+        check(str_contains($html, 'name="robots" content="noindex"') === PREVIEW, "$where: noindex only in preview mode");
 
         // who is who: university hosts and sells, the website sells nothing
         check(str_contains($footer, e(L(EVENT['organizer']))), "$where: footer names the university as host");
@@ -134,6 +145,9 @@ foreach (PAGES as $id => $page) {
                 foreach ($attrs as $attr) {
                     $v = $n[$attr] ?? '';
                     check(!preg_match('~(^|[\s,])(https?:)?//~', $v), "$where: local $tag $attr $v");
+                    foreach (preg_split('~\s*,\s*~', trim($v)) as $src) {
+                        if ($src !== '') check(str_starts_with($src, "$B/"), "$where: $tag $attr $src inside base path");
+                    }
                 }
             }
         }
@@ -156,7 +170,7 @@ foreach (PAGES as $id => $page) {
         // preloaded fonts must use the exact URL the stylesheet requests
         foreach ($links as $x) {
             if (($x['rel'] ?? '') !== 'preload' || ($x['as'] ?? '') !== 'font') continue;
-            check(str_contains($css, 'url("..' . $x['href'] . '")'), "$where: preload {$x['href']} matches @font-face");
+            check(str_contains($css, 'url("..' . substr($x['href'], strlen($B)) . '")'), "$where: preload {$x['href']} matches @font-face");
         }
 
         // removed by request
@@ -172,7 +186,7 @@ check(count(array_unique(array_column($all, 3))) === count($all), 'descriptions 
 check(count(array_unique(array_column($all, 0))) === count($all), 'paths unique');
 
 // 404 in the visitor's language, not indexed
-foreach (['/gibtsnicht' => 'de', '/en/nope' => 'en'] as $uri => $l) {
+foreach (["$B/gibtsnicht" => 'de', "$B/en/nope" => 'en'] as $uri => $l) {
     $html = render($uri);
     check(str_contains($html, '<html lang="' . $l . '">') && str_contains($html, 'name="robots" content="noindex"'), "404 $uri: $l, noindex");
 }
@@ -193,7 +207,7 @@ foreach (LANGS as $l) {
     check(array_column(array_column($ld['offers'], 'seller'), 'name') === [L(EVENT['organizer']), L(EVENT['organizer'])], "event $l: university is the seller");
 }
 foreach ($ld['image'] as $img) {
-    $file = $public . parse_url($img, PHP_URL_PATH);
+    $file = $public . substr((string) parse_url($img, PHP_URL_PATH), strlen($B));
     $size = is_file($file) ? getimagesize($file) : false;
     check($size !== false && $size[0] >= 720, "event image exists and >= 720px: $img");
 }
@@ -229,7 +243,7 @@ foreach (PROGRAM as $id => $day) {
 check(osm_url() === 'https://www.openstreetmap.org/?mlat=51.46198&mlon=7.01754#map=18/51.46198/7.01754', 'osm url');
 
 // sitemap lists every page in both languages with its alternates
-$sitemap = render('/sitemap.xml');
+$sitemap = render("$B/sitemap.xml");
 check(preg_match('~^<\?xml[^>]*\?>\s*<urlset [^>]*>(\s*<url>.*?</url>)+\s*</urlset>\s*$~s', $sitemap) === 1, 'sitemap is well-formed');
 foreach (PAGES as $id => $page) {
     foreach (LANGS as $l) {

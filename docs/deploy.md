@@ -60,3 +60,31 @@ WebFTP/SFTP.
 
 Vorige Dateien liegen lokal im Git-Stand; einfach den vorherigen Stand erneut
 hochladen. Keine Datenbank, kein Zustand auf dem Server.
+
+## Vorschau in einem Unterordner (martjn.net/acro)
+
+Zum Zeigen vor dem Go-live läuft die Seite unter `https://martjn.net/acro` –
+mit gelbem Vorschau-Banner auf jeder Seite, `noindex` und den Platzhaltern
+aus `provider.example.php` (`provider.php` wird nie eingepackt).
+
+1. Paket bauen (führt die Tests mit genau dieser Konfiguration aus):
+   ```bash
+   tools/bundle.sh https://martjn.net/acro --preview
+   # → dist/acro/ und dist/acro.zip
+   ```
+2. In konsoleH/WebFTP den Ordner `public_html/acro/` **leeren** (alte Uploads
+   entfernen) und den **Inhalt** von `dist/acro/` hineinladen – inklusive der
+   versteckten `.htaccess`-Dateien (`acro/.htaccess`, `acro/_app/.htaccess`,
+   `_app/lib/.htaccess`, `_app/pages/.htaccess`). Ohne sie ist der Code unter
+   `_app/` lesbar und die Seiten liefern 404.
+3. Prüfen:
+   ```bash
+   B=https://martjn.net/acro
+   for p in / /programm /en /en/directions; do curl -s -o /dev/null -w "%{http_code} $p\n" $B$p; done  # 200
+   curl -s -o /dev/null -w "%{http_code}\n" $B/_app/lib/event.php                                    # 403
+   curl -s $B/ | grep -c 'class="preview"'                                                           # 1
+   ```
+
+Andere Ziele: beliebige URL mit Unterordner an `tools/bundle.sh` übergeben;
+ohne `--preview` entfallen Banner und `noindex`. Die Konfiguration landet als
+`_app/lib/deploy.php` im Paket (Vorlage: `web/lib/deploy.example.php`).

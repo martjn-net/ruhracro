@@ -1,12 +1,14 @@
 // Browser checks for all pages in Chromium, Firefox and WebKit (Safari engine).
 //   cd web/tests/browser && npm ci && npx playwright install chromium firefox webkit
 //   BASE_URL=http://127.0.0.1:8932 node check.mjs        (exit 1 on any failure)
+//   BASE_URL=http://127.0.0.1:8934/acro node check.mjs   (sub-folder bundle)
 // Details and last results: docs/qualitaet.md
 import fs from 'node:fs';
 import { chromium, firefox, webkit, devices } from 'playwright';
 
-const BASE = process.env.BASE_URL ?? 'http://127.0.0.1:8932';
+const BASE = (process.env.BASE_URL ?? 'http://127.0.0.1:8932').replace(/\/$/, '');
 const HOST = new URL(BASE).host;
+const PREFIX = new URL(BASE).pathname.replace(/\/$/, ''); // '' or '/acro'
 const PAGES = ['/', '/programm', '/tickets', '/anreise', '/impressum', '/datenschutz',
   '/en', '/en/programme', '/en/tickets', '/en/directions', '/en/legal-notice', '/en/privacy'];
 // place text centre on the artwork, in % of its height (brush centre)
@@ -73,10 +75,10 @@ for (const [name, engine] of Object.entries(engines)) {
     await page.goto(BASE + '/programm', { waitUntil: 'networkidle' });
     await page.click('.lang a[hreflang="en"]');
     await page.waitForLoadState('networkidle');
-    if (new URL(page.url()).pathname !== '/en/programme' || await page.getAttribute('html', 'lang') !== 'en') fail(`${name} ${vp}: toggle DE -> EN`);
+    if (new URL(page.url()).pathname !== PREFIX + '/en/programme' || await page.getAttribute('html', 'lang') !== 'en') fail(`${name} ${vp}: toggle DE -> EN`);
     await page.click('.lang a[hreflang="de"]');
     await page.waitForLoadState('networkidle');
-    if (new URL(page.url()).pathname !== '/programm' || await page.getAttribute('html', 'lang') !== 'de') fail(`${name} ${vp}: toggle EN -> DE`);
+    if (new URL(page.url()).pathname !== PREFIX + '/programm' || await page.getAttribute('html', 'lang') !== 'de') fail(`${name} ${vp}: toggle EN -> DE`);
     if (errors.length) fail(`${name} ${vp}: JS/console errors: ${errors.join(' | ')}`);
     if (external.size) fail(`${name} ${vp}: third-party requests: ${[...external].join(', ')}`);
     console.log(`done ${name.padEnd(8)} ${vp}`);
