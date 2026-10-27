@@ -1,0 +1,109 @@
+// Browser checks for all pages in Chromium, Firefox and WebKit (Safari engine).
+//   cd web/tests/browser && npm ci && npx playwright install chromium firefox webkit
+//   BASE_URL=http://127.0.0.1:8932 node check.mjs        (exit 1 on any failure)
+// Details and last results: docs/qualitaet.md
+import fs from 'node:fs';
+import { chromium, firefox, webkit, devices } from 'playwright';
+
+const BASE = process.env.BASE_URL ?? 'http://127.0.0.1:8932';
+const HOST = new URL(BASE).host;
+const PAGES = ['/', '/programm', '/tickets', '/anreise', '/impressum', '/datenschutz',
+  '/en', '/en/programme', '/en/tickets', '/en/directions', '/en/legal-notice', '/en/privacy'];
+// place text centre on the artwork, in % of its height (brush centre)
+const PLACE_OK = y => y >= 60 && y <= 64;
+let failures = 0;
+const fail = msg => { failures++; console.log('FAIL ', msg); };
+
+async function measure(page) {
+  return page.evaluate(() => {
+    const r = s => document.querySelector(s)?.getBoundingClientRect();
+    const img = r('.hero__art img');
+    const place = r('.hero__place');
+    const small = [...document.querySelectorAll('a, button, summary')]
+      .filter(el => el.offsetParent !== null && !el.closest('p, address, li:not(.nav li)'))
+      .map(el => [el, el.getBoundingClientRect()])
+      .filter(([, b]) => b.width > 0 && (b.height < 44 || b.width < 44))
+      .map(([el, b]) => `${el.textContent.trim().slice(0, 20)} ${Math.round(b.width)}x${Math.round(b.height)}`);
+    return {
+      overflow: document.documentElement.scrollWidth - innerWidth,
+      fonts: [...document.fonts].filter(f => f.status === 'loaded').map(f => f.family.replace(/"/g, '')).sort().join('+'),
+      sticky: getComputedStyle(document.querySelector('.nav')).position,
+      placeY: img && place ? +(((place.top + place.height / 2) - img.top) / img.height * 100).toFixed(1) : null,
+      broken: [...document.images].filter(i => i.complete && !i.naturalWidth).length,
+      // brand, flags, button and links: one row on wide screens, two on narrow
+      navRows: new Set([...document.querySelectorAll('.nav__brand, .lang, .btn--nav, .nav__links')]
+        .map(el => Math.round(el.getBoundingClientRect().top / 20))).size,
+      small,
+    };
+  });
+}
+
+// 1. engines x viewports x pages
+const engines = { chromium, firefox, webkit };
+const viewports = {
+  'desktop 1440x900': { width: 1440, height: 900 },
+  'iPhone 13': devices['iPhone 13'].viewport,
+  'phone 320x640': { width: 320, height: 640 },
+  'landscape 844x390': { width: 844, height: 390 },
+};
+for (const [name, engine] of Object.entries(engines)) {
+  const browser = await engine.launch();
+  for (const [vp, viewport] of Object.entries(viewports)) {
+    const phone = viewport.width < 500;
+    const ctx = await browser.newContext({ viewport, isMobile: phone && name !== 'firefox', hasTouch: phone });
+    const page = await ctx.newPage();
+    const errors = [];
+    const external = new Set();
+    page.on('pageerror', e => errors.push(e.message));
+    page.on('console', m => m.type() === 'error' && errors.push(m.text()));
+    page.on('request', r => { const u = new URL(r.url()); if (u.host !== HOST) external.add(u.host); });
+    for (const p of PAGES) {
+      await page.goto(BASE + p, { waitUntil: 'networkidle' });
+      const m = await measure(page);
+      const where = `${name} ${vp} ${p}`;
+      if (m.overflow > 0) fail(`${where}: horizontal overflow ${m.overflow}px`);
+      if (m.fonts !== 'Kalam+Nunito') fail(`${where}: fonts loaded = ${m.fonts}`);
+      if (m.sticky !== 'sticky') fail(`${where}: nav not sticky`);
+      if (m.broken) fail(`${where}: ${m.broken} broken images`);
+      if (m.small.length) fail(`${where}: tap targets < 44px: ${m.small.join(', ')}`);
+      if ((p === '/' || p === '/en') && !PLACE_OK(m.placeY)) fail(`${where}: place text at ${m.placeY}% of artwork`);
+      if (m.navRows > 2) fail(`${where}: navigation wraps into ${m.navRows} rows`);
+    }
+    // the flag toggle switches language and keeps the page
+    await page.goto(BASE + '/programm', { waitUntil: 'networkidle' });
+    await page.click('.lang a[hreflang="en"]');
+    await page.waitForLoadState('networkidle');
+    if (new URL(page.url()).pathname !== '/en/programme' || await page.getAttribute('html', 'lang') !== 'en') fail(`${name} ${vp}: toggle DE -> EN`);
+    await page.click('.lang a[hreflang="de"]');
+    await page.waitForLoadState('networkidle');
+    if (new URL(page.url()).pathname !== '/programm' || await page.getAttribute('html', 'lang') !== 'de') fail(`${name} ${vp}: toggle EN -> DE`);
+    if (errors.length) fail(`${name} ${vp}: JS/console errors: ${errors.join(' | ')}`);
+    if (external.size) fail(`${name} ${vp}: third-party requests: ${[...external].join(', ')}`);
+    console.log(`done ${name.padEnd(8)} ${vp}`);
+    await ctx.close();
+  }
+  await browser.close();
+}
+
+// 2. old engines without container queries (Safari 15, Chrome < 105):
+// serve the stylesheet as such an engine parses it
+const css = fs.readFileSync(new URL('../../public/assets/site.css', import.meta.url), 'utf8')
+  .replace(/@supports not \(width: 1cqw\) \{/g, '@supports (display: block) {')
+  .replace(/@supports not \(container-type: inline-size\) \{/g, '@supports (display: block) {')
+  .replace(/@container[^{]+\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, '')
+  .replace(/[\d.]+cqw/g, 'INVALIDcqw')
+  .replace(/container-type: inline-size;|container: content \/ inline-size;/g, '');
+const browser = await chromium.launch();
+for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 }, { width: 1440, height: 900 }]) {
+  const page = await browser.newPage({ viewport });
+  await page.route('**/assets/site.css*', r => r.fulfill({ contentType: 'text/css', body: css }));
+  await page.goto(BASE + '/', { waitUntil: 'networkidle' });
+  const m = await measure(page);
+  if (m.overflow > 0) fail(`fallback ${viewport.width}: overflow ${m.overflow}px`);
+  if (!PLACE_OK(m.placeY)) fail(`fallback ${viewport.width}: place text at ${m.placeY}% of artwork`);
+  console.log(`done fallback ${viewport.width}px, place text at ${m.placeY}%`);
+  await page.close();
+}
+await browser.close();
+console.log(failures ? `${failures} failed` : 'all browser checks passed');
+process.exit(failures ? 1 : 0);

@@ -1,0 +1,2 @@
+# Not web-accessible. Only matters if the docroot is not web/public.
+Require all denied

@@ -1,0 +1,9 @@
+# Local production-like server: Apache + mod_rewrite/headers/expires/deflate,
+# AllowOverride All, so web/public/.htaccess is exercised exactly as on the
+# Hetzner webspace. Not deployed.
+#   docker build -f web/Dockerfile.dev -t ruhracro-web web
+#   docker run --rm -p 8932:80 -v "$PWD/web:/var/www/site:ro" ruhracro-web
+FROM php:8.4-apache
+RUN a2enmod rewrite headers expires deflate \
+ && sed -ri 's#/var/www/html#/var/www/site/public#g' /etc/apache2/sites-available/000-default.conf \
+ && printf '<Directory /var/www/site/public>\n  AllowOverride All\n  Require all granted\n</Directory>\n' > /etc/apache2/conf-enabled/site.conf

@@ -1,0 +1,6 @@
+# Build-only dependencies (tools/build.sh). The website itself needs none.
+opencv-contrib-python-headless==4.10.0.84
+numpy==2.0.2
+pillow==13.0.0
+fonttools==4.67.0
+brotli==1.2.1

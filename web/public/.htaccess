@@ -1,0 +1,56 @@
+# Apache (Hetzner Webhosting). Docroot = web/public.
+
+Options -Indexes -MultiViews
+DirectoryIndex index.php
+AddDefaultCharset utf-8
+AddType font/woff2 .woff2
+AddType image/webp .webp
+AddType application/xml .xml
+AddType image/svg+xml .svg
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # HTTPS + no www (enable once the certificate is active, see docs/deploy.md)
+  # RewriteCond %{HTTPS} off [OR]
+  # RewriteCond %{HTTP_HOST} ^www\. [NC]
+  # RewriteRule ^ https://ruhracro.de%{REQUEST_URI} [R=301,L]
+
+  # every request that is not a real file goes to the front controller;
+  # routes (DE /…, EN /en/…), redirects and 404 live in web/lib/render.php
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/xml text/plain image/svg+xml application/ld+json
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 1 hour"
+  ExpiresByType text/html "access plus 0 seconds"
+  # versioned via ?v=<hash> in render.php asset()
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 month"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 year"
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+  # only self-hosted assets; inline JSON-LD is data, not script
+  Header always set Content-Security-Policy "default-src 'self'; img-src 'self'; style-src 'self'; font-src 'self'; script-src 'none'; frame-ancestors 'self'; base-uri 'self'; form-action 'none'"
+  # enable after HTTPS works:
+  # Header always set Strict-Transport-Security "max-age=31536000"
+  # site.css and the flag SVGs are requested with ?v=<hash>; fonts and images
+  # are not versioned (CSS url() / preload must match), so they get a finite max-age
+  <FilesMatch "\.(css|svg)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
