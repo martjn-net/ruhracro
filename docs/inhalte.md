@@ -18,9 +18,9 @@ together“** (ohne Punkt), Instagram **@ruhracroconvention**.
 
 | Konstante | Inhalt |
 |---|---|
-| `SITE_URL` | `https://ruhracro.de` (Canonical, Sitemap, JSON-LD, OG) |
-| `EVENT` | Name, Claim, Start `2027-03-05T16:00+01:00`, Ende `2027-03-07T17:30+01:00`, Buchungs-URL, Instagram, Veranstalter (DE/EN) |
-| `HOSTING` | Hetzner als Auftragsverarbeiter, Log-Speicherdauer (offen) für die Datenschutzerklärung |
+| `SITE_URL`, `PREVIEW`, `DESIGN` | aus der Deploy-Konfiguration; Standard `https://ruhracro.de`, keine Vorschau, Design `classic` ([architektur.md](architektur.md#zwei-designs)) |
+| `EVENT` | Marke, Name, Claim, Start `2027-03-05T16:00+01:00`, Ende `2027-03-07T17:30+01:00`, Buchungs-URL, Instagram, Veranstalter (DE/EN). Angezeigtes Datum („5.–7. März 2027“) entsteht aus Start/Ende über `event_dates()` in `render.php` – nur Start/Ende pflegen |
+| `HOSTING` | Hetzner als Auftragsverarbeiter, Log-Speicherdauer 7 Tage, `confirmed` = AV-Vertrag und Löschregel in konsoleH erledigt ([recht.md](recht.md)) |
 | `PROVIDER` | Betreiber der Website und Organisator: Impressum, Datenschutz, Footer; aus `web/lib/provider.php` (nicht im Repo, siehe [deploy.md](deploy.md)) |
 | `VENUE` | Sporthalle an der Schützenbahn, Schützenbahn 70, 45127 Essen, Eingang Waldthausenstraße, Gebäude S-M; Koordinaten 51.46198 / 7.01754 (Halleneingang) |
 | `TICKETS` | Early Bird 74/89/105 € (**ausverkauft**), Regular 79/99/119 € (buchbar) |

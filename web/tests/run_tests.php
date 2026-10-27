@@ -196,8 +196,8 @@ foreach ($pages as $l => $byId) {
 }
 check(str_contains($pages['de']['home'], '<header class="hero">') === !$scene, 'home: poster hero only in the classic design');
 if ($scene) {
-    foreach (['head', 'foot'] as $band) {
-        foreach ([1600, 2600, 4000, 6173] as $w) {
+    foreach (array_keys(BAND_HEIGHTS) as $band) {
+        foreach (BAND_WIDTHS as $w) {
             foreach (['avif', 'webp'] as $ext) check(is_file("$public/img/$band-$w.$ext"), "band image $band-$w.$ext exists");
         }
     }
@@ -232,6 +232,10 @@ foreach (LANGS as $l) {
     $ld = ld_event();
     check($ld['inLanguage'] === $l && $ld['url'] === SITE_URL . PAGES['home'][$l][0], "event $l: language and url");
     check($ld['startDate'] === '2027-03-05T16:00:00+01:00' && $ld['endDate'] === '2027-03-07T17:30:00+01:00', "event $l: dates");
+    // visible dates (hero, programme, share alt text) come from the same start/end
+    $label = ['de' => '5.–7. März 2027', 'en' => '5–7 March 2027'][$l];
+    check(event_dates() === $label, "event $l: date label '$label'");
+    check(str_contains($pages[$l]['programm'], $label), "programm $l: date label in the lead");
     check(array_column($ld['offers'], 'price') === [74, 79], "event $l: offer price = lowest price per ticket type");
     check(array_column($ld['offers'], 'availability') === ['https://schema.org/SoldOut', 'https://schema.org/InStock'], "event $l: offer availability");
     check(array_column(array_column($ld['offers'], 'seller'), 'name') === [L(EVENT['organizer']), L(EVENT['organizer'])], "event $l: university is the seller");

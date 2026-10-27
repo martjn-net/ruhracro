@@ -58,8 +58,14 @@ Auswahl über den Schlüssel `design` der Deploy-Konfiguration (`deploy.php`
 bzw. `$ACRO_DEPLOY_CONFIG`, Vorlage `deploy.example.php`); ohne Angabe
 `classic`. Im Code verzweigen nur `page_head()`/`page_foot()`/`band()` in
 `render.php` und der Hero-Block in `pages/home.php` über die Konstante
-`DESIGN`. Die Klassik-Ausgabe ist durch die Umstellung byte-identisch
-geblieben (geprüft 2026-10-27).
+`DESIGN`; beide Hero-Varianten teilen `event_dates()` und `event_facts()`
+(Tage, Halle, Buchen-Button, Veranstalter), alle Buchen-Links kommen aus
+`book_button()`.
+
+Refactorings werden gegen einen Render-Schnappschuss aller Routen in allen
+drei Test-Konfigurationen geprüft (Ausgabe bis auf Leerraum gleich) und die
+Bildpipeline gegen SHA256 aller Dateien in `web/public/img/` (zuletzt
+2026-10-27: alle 40 Dateien byte-identisch).
 
 ## Mehrsprachigkeit
 

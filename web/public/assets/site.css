@@ -292,6 +292,7 @@ a { color: inherit; }
   justify-content: center;
   gap: .5rem 1.25rem;
 }
+.hero__host { margin: 0; font-size: .92rem; color: var(--text-dim); }
 
 /* Browsers without container query units (Safari < 16, Chrome < 105):
    the artwork spans the full viewport width, so 1cqw == 1vw exactly. The
@@ -318,6 +319,7 @@ main { container: content / inline-size; }
   padding-block: var(--gap-xl);
   text-align: center;
 }
+.section--wide { width: min(100% - 2.5rem, 76rem); }
 .section:first-child { padding-top: var(--gap-l); }
 .section + .section { border-top: 1px solid var(--line); }
 .section h1, .section > h2 {
@@ -422,7 +424,6 @@ address { font-style: normal; margin-bottom: var(--gap-s); }
 .cards .sold { opacity: .7; }
 .sold__tag { font: 700 1rem var(--body); color: var(--text-dim); }
 .intro { margin: 0 0 var(--gap-m); color: var(--text-dim); }
-.hero__host { margin: 0; font-size: .92rem; color: var(--text-dim); }
 .notice {
   max-width: 40rem;
   margin: 0 auto var(--gap-l);
@@ -464,7 +465,6 @@ address { font-style: normal; margin-bottom: var(--gap-s); }
   border-left: 3px solid transparent;
 }
 .slot__what strong { font-weight: 700; }
-.section--wide { width: min(100% - 2.5rem, 76rem); }
 .slot__what span { display: block; font-size: .92rem; color: var(--text-dim); }
 .slot--workshop { border-left-color: var(--tone); background: rgba(253, 248, 236, .07); }
 .slot--workshop strong { color: var(--sky); font-weight: 800; }

@@ -10,11 +10,13 @@
    edges facing the content are baked to exactly --night: no seam. */
 
 .scene {
+  --head-ratio: 2806 / 1438; /* band cores in px of the 2x poster; BAND_HEIGHTS in render.php */
+  --foot-ratio: 2806 / 986;
   --side: min(200px, 14%);
   --head-max: 50vh; /* header at most half the viewport; scales, never crops */
-  --core-w: min(100% - 2 * var(--side), var(--head-max) * 2806 / 1438);
-  /* same column in viewport units, for the footer overlap only */
-  --core-vw: min(max(72vw, 100vw - 400px), var(--head-max) * 2806 / 1438);
+  --core-w: min(100% - 2 * var(--side), var(--head-max) * var(--head-ratio));
+  /* same column in viewport units (side = min(200px, 14vw)), for the footer overlap only */
+  --core-vw: min(max(72vw, 100vw - 400px), var(--head-max) * var(--head-ratio));
   display: flex;
   flex-direction: column;
   min-height: 100vh;
@@ -34,8 +36,8 @@
   object-position: center;
 }
 .band__core { position: relative; width: var(--core-w); margin-inline: auto; }
-.band--head .band__core { aspect-ratio: 2806 / 1438; }
-.band--foot .band__core { aspect-ratio: 2806 / 986; }
+.band--head .band__core { aspect-ratio: var(--head-ratio); }
+.band--foot .band__core { aspect-ratio: var(--foot-ratio); }
 
 /* ------------------------------------------------------------ home welcome block
    The poster lettering is not in the band; title and facts are live text. */
@@ -84,5 +86,5 @@
 .scene .footer > :not(.band) { position: relative; z-index: 1; }
 .scene .footer .band {
   justify-self: stretch;
-  margin: calc(-.3 * var(--core-vw) * 986 / 2806) -1.25rem 0;
+  margin: calc(-.3 * var(--core-vw) / (var(--foot-ratio))) -1.25rem 0; /* 30 % of the band height */
 }

@@ -33,12 +33,12 @@ const DESIGNS = ['classic', 'scene']; // classic: poster hero; scene: header/foo
 const LANGS = ['de', 'en'];             // first = default (x-default)
 
 const EVENT = [
+    'brand'       => 'Ruhr Acro Convention',
     'name'        => 'Ruhr Acro Convention 2027',
     'claim'       => 'Move together. Grow together',
     'subtitle'    => ['de' => 'Acroyoga & Akrobatik Festival', 'en' => 'Acroyoga & Acrobatics Festival'],
-    'start'       => '2027-03-05T16:00:00+01:00',
+    'start'       => '2027-03-05T16:00:00+01:00', // date display: event_dates() in render.php
     'end'         => '2027-03-07T17:30:00+01:00',
-    'date_label'  => ['de' => '5.–7. März 2027', 'en' => '5–7 March 2027'],
     'days_label'  => ['de' => 'Freitag bis Sonntag', 'en' => 'Friday to Sunday'],
     'booking_url' => 'https://www.buchsys.de/due/angebote/aktueller_zeitraum_1/_AcroYoga__und__Akrobatik_Festival.html',
     'instagram'   => 'https://www.instagram.com/ruhracroconvention',

@@ -49,7 +49,7 @@ $eur = fn (int $p): string => lang() === 'en' ? "€$p" : "$p €";
 <?php endif; ?>
       </ul>
     </div>
-    <p class="more"><?= ext(EVENT['booking_url'], tr('Jetzt buchen', 'Book now'), 'btn', icon('ticket')) ?></p>
+    <p class="more"><?= book_button() ?></p>
   </section>
 </main>
 <?php page_foot();

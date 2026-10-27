@@ -17,22 +17,11 @@ if (DESIGN === 'classic'): ?>
     </picture>
 
     <h1 class="visually-hidden"><?= e(EVENT['name']) ?> – <?= e(L(EVENT['subtitle'])) ?> <?= t('in Essen', 'in Essen, Germany') ?></h1>
-    <p class="brush-text hero__place"><?= icon('pin') ?> Essen</p>
-    <p class="brush-text hero__date">
-<?php if (lang() === 'en'): ?>
-      <time datetime="2027-03-05">5</time>–<time datetime="2027-03-07">7 March 2027</time>
-<?php else: ?>
-      <time datetime="2027-03-05">5.</time>–<time datetime="2027-03-07">7. März 2027</time>
-<?php endif; ?>
-    </p>
+    <p class="brush-text hero__place"><?= icon('pin') ?> <?= e(VENUE['city']) ?></p>
+    <p class="brush-text hero__date"><?= event_dates(true) ?></p>
 
     <div class="hero__stage">
-      <p class="hero__venue"><span><?= e(L(EVENT['days_label'])) ?></span> <span><?= e(VENUE['name']) ?>, <?= e(VENUE['zip'] . ' ' . VENUE['city']) ?></span></p>
-      <div class="hero__actions">
-        <?= ext(EVENT['booking_url'], tr('Jetzt buchen', 'Book now'), 'btn', icon('ticket')) ?>
-        <a class="link" href="<?= e(page_url('programm')) ?>"><?= t('Programm ansehen', 'See the programme') ?></a>
-      </div>
-      <p class="hero__host"><?= t('Veranstalter', 'Hosted by') ?>: <?= e(L(EVENT['organizer'])) ?></p>
+<?php event_facts('hero'); ?>
     </div>
   </div>
 </header>
@@ -43,19 +32,10 @@ if (DESIGN === 'classic'): ?>
   <section class="section welcome" aria-labelledby="titel">
     <h1 id="titel"><?= e(EVENT['name']) ?> <span class="welcome__sub"><?= e(L(EVENT['subtitle'])) ?> <?= t('in Essen', 'in Essen, Germany') ?></span></h1>
     <p class="welcome__when">
-      <span class="welcome__place"><?= icon('pin') ?> Essen</span>
-<?php if (lang() === 'en'): ?>
-      <span><time datetime="2027-03-05">5</time>–<time datetime="2027-03-07">7 March 2027</time></span>
-<?php else: ?>
-      <span><time datetime="2027-03-05">5.</time>–<time datetime="2027-03-07">7. März 2027</time></span>
-<?php endif; ?>
+      <span class="welcome__place"><?= icon('pin') ?> <?= e(VENUE['city']) ?></span>
+      <span><?= event_dates(true) ?></span>
     </p>
-    <p class="welcome__venue"><span><?= e(L(EVENT['days_label'])) ?></span> <span><?= e(VENUE['name']) ?>, <?= e(VENUE['zip'] . ' ' . VENUE['city']) ?></span></p>
-    <div class="welcome__actions">
-      <?= ext(EVENT['booking_url'], tr('Jetzt buchen', 'Book now'), 'btn', icon('ticket')) ?>
-      <a class="link" href="<?= e(page_url('programm')) ?>"><?= t('Programm ansehen', 'See the programme') ?></a>
-    </div>
-    <p class="welcome__host"><?= t('Veranstalter', 'Hosted by') ?>: <?= e(L(EVENT['organizer'])) ?></p>
+<?php event_facts('welcome'); ?>
   </section>
 <?php endif; ?>
   <section class="section" aria-labelledby="festival">

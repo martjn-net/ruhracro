@@ -103,6 +103,30 @@ function ext(string $url, string $label, string $class = '', string $icon = ''):
     );
 }
 
+/** The booking link to buchsys.de, the one call to action of the site. */
+function book_button(string $class = 'btn', bool $withIcon = true): string
+{
+    return ext(EVENT['booking_url'], tr('Jetzt buchen', 'Book now'), $class, $withIcon ? icon('ticket') : '');
+}
+
+/**
+ * Event dates from EVENT start/end in the current language, "5.–7. März 2027"
+ * or "5–7 March 2027" (start and end in the same month); $html marks up both
+ * days as <time>.
+ */
+function event_dates(bool $html = false): string
+{
+    $months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+    $from = new DateTimeImmutable(EVENT['start']);
+    $to = new DateTimeImmutable(EVENT['end']);
+    [$first, $last] = lang() === 'en'
+        ? [$from->format('j'), $to->format('j F Y')]
+        : [$from->format('j.'), $to->format('j. ') . $months[(int) $to->format('n') - 1] . $to->format(' Y')];
+    if (!$html) return "{$first}–{$last}";
+    return sprintf('<time datetime="%s">%s</time>–<time datetime="%s">%s</time>',
+        $from->format('Y-m-d'), e($first), $to->format('Y-m-d'), e($last));
+}
+
 function icon(string $name): string
 {
     $paths = [
@@ -129,15 +153,12 @@ function asset(string $path): string
 
 /* ---------------------------------------------------------------- layout */
 
-/** $id: key of PAGES, or '404'. */
+/** $id: key of PAGES, or '404'. Opens the document up to and including the header. */
 function page_head(string $id, array $jsonld = [], string $bodyClass = ''): void
 {
     $found = $id !== '404';
-    [$path, , $title, $desc] = $found
-        ? PAGES[$id][lang()]
-        : [null, null, tr('Seite nicht gefunden', 'Page not found') . ' – Ruhr Acro Convention', ''];
-    $img = SITE_URL . '/img/social-1200x630.jpg';
-    $locale = ['de' => 'de_DE', 'en' => 'en_GB'];
+    $title = $found ? PAGES[$id][lang()][2] : tr('Seite nicht gefunden', 'Page not found') . ' – ' . EVENT['brand'];
+    $bodyClass = trim($bodyClass . (DESIGN === 'scene' ? ' scene' : ''));
     header('Content-Type: text/html; charset=utf-8');
     ?>
 <!DOCTYPE html>
@@ -149,28 +170,7 @@ function page_head(string $id, array $jsonld = [], string $bodyClass = ''): void
 <?php if (!$found || PREVIEW): ?>
 <meta name="robots" content="noindex">
 <?php endif; ?>
-<?php if ($found): ?>
-<meta name="description" content="<?= e($desc) ?>">
-<link rel="canonical" href="<?= e(SITE_URL . $path) ?>">
-<?php foreach (LANGS as $l): ?>
-<link rel="alternate" hreflang="<?= e($l) ?>" href="<?= e(abs_url($id, $l)) ?>">
-<?php endforeach; ?>
-<link rel="alternate" hreflang="x-default" href="<?= e(abs_url($id, LANGS[0])) ?>">
-<meta property="og:type" content="website">
-<meta property="og:locale" content="<?= e($locale[lang()]) ?>">
-<?php foreach (LANGS as $l): if ($l !== lang()): ?>
-<meta property="og:locale:alternate" content="<?= e($locale[$l]) ?>">
-<?php endif; endforeach; ?>
-<meta property="og:site_name" content="Ruhr Acro Convention">
-<meta property="og:title" content="<?= e($title) ?>">
-<meta property="og:description" content="<?= e($desc) ?>">
-<meta property="og:url" content="<?= e(SITE_URL . $path) ?>">
-<meta property="og:image" content="<?= e($img) ?>">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="<?= t('Poster der Ruhr Acro Convention 2027: 5.–7. März 2027 in Essen', 'Poster of the Ruhr Acro Convention 2027: 5–7 March 2027 in Essen') ?>">
-<meta name="twitter:card" content="summary_large_image">
-<?php endif; ?>
+<?php if ($found) seo_meta($id); ?>
 <meta name="theme-color" content="#001913">
 <link rel="icon" href="<?= e(asset('img/favicon.png')) ?>" type="image/png">
 <link rel="apple-touch-icon" href="<?= e(asset('img/touch-icon.png')) ?>">
@@ -184,7 +184,6 @@ function page_head(string $id, array $jsonld = [], string $bodyClass = ''): void
 <script type="application/ld+json"><?= json_encode($block, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?></script>
 <?php endforeach; ?>
 </head>
-<?php $bodyClass = trim($bodyClass . (DESIGN === 'scene' ? ' scene' : '')); ?>
 <body<?= $bodyClass ? ' class="' . e($bodyClass) . '"' : '' ?>>
 <a class="skip" href="#inhalt"><?= t('Zum Inhalt springen', 'Skip to content') ?></a>
 <?php if (PREVIEW): ?>
@@ -198,24 +197,56 @@ function page_head(string $id, array $jsonld = [], string $bodyClass = ''): void
     if (DESIGN === 'scene') band('head');
 }
 
+/** Description, canonical, hreflang and Open Graph of a page. */
+function seo_meta(string $id): void
+{
+    [$path, , $title, $desc] = PAGES[$id][lang()];
+    $locale = ['de' => 'de_DE', 'en' => 'en_GB'];
+    ?>
+<meta name="description" content="<?= e($desc) ?>">
+<link rel="canonical" href="<?= e(SITE_URL . $path) ?>">
+<?php foreach (LANGS as $l): ?>
+<link rel="alternate" hreflang="<?= e($l) ?>" href="<?= e(abs_url($id, $l)) ?>">
+<?php endforeach; ?>
+<link rel="alternate" hreflang="x-default" href="<?= e(abs_url($id, LANGS[0])) ?>">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="<?= e($locale[lang()]) ?>">
+<?php foreach (LANGS as $l): if ($l !== lang()): ?>
+<meta property="og:locale:alternate" content="<?= e($locale[$l]) ?>">
+<?php endif; endforeach; ?>
+<meta property="og:site_name" content="<?= e(EVENT['brand']) ?>">
+<meta property="og:title" content="<?= e($title) ?>">
+<meta property="og:description" content="<?= e($desc) ?>">
+<meta property="og:url" content="<?= e(SITE_URL . $path) ?>">
+<meta property="og:image" content="<?= e(SITE_URL . '/img/social-1200x630.jpg') ?>">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="<?= e(tr('Poster der ', 'Poster of the ') . EVENT['name'] . ': ' . event_dates() . ' in ' . VENUE['city']) ?>">
+<meta name="twitter:card" content="summary_large_image">
+<?php
+}
+
+/** Scene design band files (tools/build_assets.py): widths and the height of the widest file. */
+const BAND_WIDTHS = [1600, 2600, 4000, 6173];
+const BAND_HEIGHTS = ['head' => 1438, 'foot' => 986];
+
 /**
  * Scene design: header or footer band, a decorative poster crop with baked
- * side bleed (tools/build_assets.py, docs/build.md). The empty core box
- * sizes the band; scene.css lays the picture over it with object-fit: cover.
+ * side bleed (docs/build.md). The empty core box sizes the band; scene.css
+ * lays the picture over it with object-fit: cover.
  * sizes = 2.2 x core width; core = min(max(72vw, 100vw - 400px), 50vh x 2806/1438).
  */
 function band(string $name): void
 {
-    $height = ['head' => 1438, 'foot' => 986][$name]; // of the 6173 px wide file
     $set = fn (string $ext): string => implode(', ', array_map(
-        fn (int $w): string => public_url("/img/$name-$w.$ext") . " {$w}w", [1600, 2600, 4000, 6173]));
+        fn (int $w): string => public_url("/img/$name-$w.$ext") . " {$w}w", BAND_WIDTHS));
     $sizes = 'min(max(158vw, 220vw - 880px), 215vh)';
     ?>
 <div class="band band--<?= e($name) ?>">
   <picture>
     <source type="image/avif" srcset="<?= e($set('avif')) ?>" sizes="<?= $sizes ?>">
     <img src="<?= e(public_url("/img/$name-2600.webp")) ?>" srcset="<?= e($set('webp')) ?>" sizes="<?= $sizes ?>"
-         width="6173" height="<?= $height ?>" alt=""<?= $name === 'head' ? ' fetchpriority="high"' : ' loading="lazy"' ?> decoding="async">
+         width="<?= max(BAND_WIDTHS) ?>" height="<?= BAND_HEIGHTS[$name] ?>" alt=""<?= $name === 'head' ? ' fetchpriority="high"' : ' loading="lazy"' ?> decoding="async">
   </picture>
   <div class="band__core"></div>
 </div>
@@ -236,7 +267,7 @@ function site_nav(string $id): void
     <li class="nav__legal-compact"><a href="<?= e(page_url('impressum')) ?>"<?= $legal ? ' aria-current="page"' : '' ?> aria-label="<?= t('Impressum und Datenschutz', 'Legal notice and privacy') ?>"><?= t('Rechtliches', 'Legal') ?></a></li>
   </ul>
 <?php lang_toggle($id); ?>
-  <?= ext(EVENT['booking_url'], tr('Jetzt buchen', 'Book now'), 'btn btn--nav') ?>
+  <?= book_button('btn btn--nav', false) ?>
 </nav>
 <?php
 }
@@ -262,7 +293,7 @@ function page_foot(): void
   <img src="<?= e(asset('img/lotus.webp')) ?>" width="160" height="92" alt="" loading="lazy" decoding="async">
   <p class="motto"><?= e(EVENT['claim']) ?></p>
   <p class="footer__links">
-    <?= ext(EVENT['instagram'], '@ruhracroconvention', 'link', icon('instagram')) ?>
+    <?= ext(EVENT['instagram'], '@' . basename(EVENT['instagram']), 'link', icon('instagram')) ?>
   </p>
   <div class="footer__org">
     <p><?= t('Veranstalter', 'Event host') ?>: <?= ext(EVENT['organizer_url'], L(EVENT['organizer'])) ?></p>
@@ -335,7 +366,7 @@ function ld_event(): array
         '@type' => 'Event',
         '@id' => SITE_URL . '/#event',
         'name' => EVENT['name'],
-        'alternateName' => 'Ruhr Acro Convention – ' . L(EVENT['subtitle']),
+        'alternateName' => EVENT['brand'] . ' – ' . L(EVENT['subtitle']),
         'description' => tr(
             'Ein Wochenende voller Acroyoga und Partnerakrobatik: 8 Workshop-Blöcke für alle Level (Standing Acro, Hand to Hand, Foot to Hand, Pops, Whips, Icarians, Flows), Jams, freies Training und Community.',
             'A weekend full of acroyoga and partner acrobatics: 8 workshop blocks for all levels (Standing Acro, Hand to Hand, Foot to Hand, Pops, Whips, Icarians, Flows), jams, open training and community.'
@@ -370,7 +401,7 @@ function ld_website(): array
         '@type' => 'WebSite',
         '@id' => SITE_URL . '/#website',
         'url' => SITE_URL . '/',
-        'name' => 'Ruhr Acro Convention',
+        'name' => EVENT['brand'],
         'inLanguage' => LANGS,
         'about' => ['@id' => SITE_URL . '/#event'],
     ];
@@ -389,6 +420,19 @@ function ld_breadcrumb(string $id): array
 }
 
 /* --------------------------------------------------------------- content */
+
+/** Home, both designs: days and venue, booking and programme links, host; $block = BEM block. */
+function event_facts(string $block): void
+{
+    ?>
+<p class="<?= $block ?>__venue"><span><?= e(L(EVENT['days_label'])) ?></span> <span><?= e(VENUE['name']) ?>, <?= e(VENUE['zip'] . ' ' . VENUE['city']) ?></span></p>
+<div class="<?= $block ?>__actions">
+  <?= book_button() ?>
+  <a class="link" href="<?= e(page_url('programm')) ?>"><?= t('Programm ansehen', 'See the programme') ?></a>
+</div>
+<p class="<?= $block ?>__host"><?= t('Veranstalter', 'Hosted by') ?>: <?= e(L(EVENT['organizer'])) ?></p>
+<?php
+}
 
 /** "16:00–17:20", "vor 16:00" or "ab 17:30" as HTML. */
 function slot_time(?string $from, ?string $to): string
