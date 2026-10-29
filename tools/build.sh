@@ -15,7 +15,6 @@ MODEL_SHA256=585623221baa070279a0d1e7e113a4c3faba0f318ca7fdd9a65d9afc0763d9b4
 # build_assets.py are measured on exactly these files.
 SOURCES=(
   "72c42533bd90b9d4ed05000cd50c94aaaf2b94eca099d69e66c629e9b017b571  quelle/ruhr-acro-convention-2027.jpg"
-  "17e1eb7543c29ab5ef35ecbc4ac006790dc19be87a0e7c7d87bdad82cc46d9ba  exporte/style1/WhatsApp Image 2026-10-27 at 12.48.16.jpeg"
 )
 
 # Self-hosted webfonts (SIL OFL 1.1), fetched at build time only.

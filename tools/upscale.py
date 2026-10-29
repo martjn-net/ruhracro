@@ -15,9 +15,8 @@ ROOT = Path(__file__).resolve().parent.parent
 MODEL = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "tools/models/EDSR_x2.pb"
 CACHE = ROOT / "tools/.cache"
 SOURCES = {
-    # 4:5 composition: the original (1403x1753) beats the 1122x1402 export.
+    # the original (1403x1753) beats the 1122x1402 export
     "poster45": ROOT / "quelle/ruhr-acro-convention-2027.jpg",
-    "poster916": ROOT / "exporte/style1/WhatsApp Image 2026-10-27 at 12.48.16.jpeg",
 }
 TILE = 192
 PAD = 12

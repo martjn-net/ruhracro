@@ -2,7 +2,6 @@
 //   cd web/tests/browser && npm ci && npx playwright install chromium firefox webkit
 //   BASE_URL=http://127.0.0.1:8932 node check.mjs        (exit 1 on any failure)
 //   BASE_URL=http://127.0.0.1:8934/acro node check.mjs   (sub-folder bundle)
-// Works for both designs; the design is read from the page (body.scene).
 // Details and last results: docs/qualitaet.md
 import fs from 'node:fs';
 import { chromium, firefox, webkit, devices } from 'playwright';
@@ -12,16 +11,12 @@ const HOST = new URL(BASE).host;
 const PREFIX = new URL(BASE).pathname.replace(/\/$/, ''); // '' or '/acro'
 const PAGES = ['/', '/programm', '/tickets', '/anreise', '/impressum', '/datenschutz',
   '/en', '/en/programme', '/en/tickets', '/en/directions', '/en/legal-notice', '/en/privacy'];
-// place text centre on the artwork, in % of its height (brush centre)
-const PLACE_OK = y => y >= 60 && y <= 64;
 let failures = 0;
 const fail = msg => { failures++; console.log('FAIL ', msg); };
 
 async function measure(page) {
   return page.evaluate(() => {
     const r = s => document.querySelector(s)?.getBoundingClientRect();
-    const img = r('.hero__art img');
-    const place = r('.hero__place');
     const small = [...document.querySelectorAll('a, button, summary')]
       .filter(el => el.offsetParent !== null && !el.closest('p, address, li:not(.nav li)'))
       .map(el => [el, el.getBoundingClientRect()])
@@ -30,18 +25,16 @@ async function measure(page) {
     const band = s => document.querySelector(`.band--${s} .band__core`);
     const nav = r('.nav');
     return {
-      scene: document.body.classList.contains('scene'),
       overflow: document.documentElement.scrollWidth - innerWidth,
       fonts: [...document.fonts].filter(f => f.status === 'loaded').map(f => f.family.replace(/"/g, '')).sort().join('+'),
       sticky: getComputedStyle(document.querySelector('.nav')).position,
-      placeY: img && place ? +(((place.top + place.height / 2) - img.top) / img.height * 100).toFixed(1) : null,
       broken: [...document.images].filter(i => i.complete && !i.naturalWidth).length,
       // brand, flags, button and links: one row on wide screens, two on narrow
       navRows: new Set([...document.querySelectorAll('.nav__brand, .lang, .btn--nav, .nav__links')]
         .map(el => Math.round(el.getBoundingClientRect().top / 20))).size,
       small,
-      // scene design: header band right below the navigation, at most half the
-      // viewport high, centred; footer band ends the page
+      // header band right below the navigation, at most half the viewport
+      // high, centred; footer band ends the page
       head: band('head') && {
         gap: Math.round(band('head').getBoundingClientRect().top + scrollY - (nav.bottom + scrollY)),
         height: band('head').getBoundingClientRect().height,
@@ -80,13 +73,10 @@ for (const [name, engine] of Object.entries(engines)) {
       if (m.sticky !== 'sticky') fail(`${where}: nav not sticky`);
       if (m.broken) fail(`${where}: ${m.broken} broken images`);
       if (m.small.length) fail(`${where}: tap targets < 44px: ${m.small.join(', ')}`);
-      if (!m.scene && (p === '/' || p === '/en') && !PLACE_OK(m.placeY)) fail(`${where}: place text at ${m.placeY}% of artwork`);
-      if (m.scene) {
-        if (!m.head || m.head.gap !== 0) fail(`${where}: header band not directly below the navigation (${m.head?.gap})`);
-        else if (m.head.height > viewport.height / 2 + 1) fail(`${where}: header band ${m.head.height}px > half the viewport`);
-        else if (m.head.offCentre > 1) fail(`${where}: header band off centre by ${m.head.offCentre}px`);
-        if (Math.abs(m.footEnd) > 1) fail(`${where}: footer band does not end the page (${m.footEnd}px)`); // 1px: subpixel rounding of scrollHeight
-      }
+      if (!m.head || m.head.gap !== 0) fail(`${where}: header band not directly below the navigation (${m.head?.gap})`);
+      else if (m.head.height > viewport.height / 2 + 1) fail(`${where}: header band ${m.head.height}px > half the viewport`);
+      else if (m.head.offCentre > 1) fail(`${where}: header band off centre by ${m.head.offCentre}px`);
+      if (Math.abs(m.footEnd) > 1) fail(`${where}: footer band does not end the page (${m.footEnd}px)`); // 1px: subpixel rounding of scrollHeight
       if (m.navRows > 2) fail(`${where}: navigation wraps into ${m.navRows} rows`);
     }
     // the flag toggle switches language and keeps the page
@@ -108,10 +98,8 @@ for (const [name, engine] of Object.entries(engines)) {
 // 2. old engines without container queries (Safari 15, Chrome < 105):
 // serve the stylesheet as such an engine parses it
 const css = fs.readFileSync(new URL('../../public/assets/site.css', import.meta.url), 'utf8')
-  .replace(/@supports not \(width: 1cqw\) \{/g, '@supports (display: block) {')
   .replace(/@supports not \(container-type: inline-size\) \{/g, '@supports (display: block) {')
   .replace(/@container[^{]+\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, '')
-  .replace(/[\d.]+cqw/g, 'INVALIDcqw')
   .replace(/container-type: inline-size;|container: content \/ inline-size;/g, '');
 const browser = await chromium.launch();
 for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 }, { width: 1440, height: 900 }]) {
@@ -120,8 +108,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 
   await page.goto(BASE + '/', { waitUntil: 'networkidle' });
   const m = await measure(page);
   if (m.overflow > 0) fail(`fallback ${viewport.width}: overflow ${m.overflow}px`);
-  if (!m.scene && !PLACE_OK(m.placeY)) fail(`fallback ${viewport.width}: place text at ${m.placeY}% of artwork`);
-  console.log(`done fallback ${viewport.width}px, place text at ${m.placeY}%`);
+  console.log(`done fallback ${viewport.width}px`);
   await page.close();
 }
 await browser.close();

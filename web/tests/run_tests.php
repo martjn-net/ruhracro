@@ -180,26 +180,17 @@ foreach (PAGES as $id => $page) {
     }
 }
 
-// designs: same content and contracts; only the chrome differs (deploy config 'design')
-$scene = DESIGN === 'scene';
+// page frame: header band between navigation and content, footer band inside the footer
 foreach ($pages as $l => $byId) {
     foreach ($byId as $id => $html) {
-        $where = "$l $id";
         $head = strpos($html, '<div class="band band--head">');
-        check(str_contains($html, '/assets/scene.css') === $scene, "$where: scene.css only in the scene design");
-        check(($head !== false) === $scene, "$where: header band only in the scene design");
-        if ($scene) {
-            check($head > strpos($html, '<nav class="nav"') && $head < strpos($html, '<main'), "$where: header band between navigation and content");
-            check(str_contains(between($html, '<footer', '</footer>'), '<div class="band band--foot">'), "$where: footer band inside the footer");
-        }
+        check($head !== false && $head > strpos($html, '<nav class="nav"') && $head < strpos($html, '<main'), "$l $id: header band between navigation and content");
+        check(str_contains(between($html, '<footer', '</footer>'), '<div class="band band--foot">'), "$l $id: footer band inside the footer");
     }
 }
-check(str_contains($pages['de']['home'], '<header class="hero">') === !$scene, 'home: poster hero only in the classic design');
-if ($scene) {
-    foreach (array_keys(BAND_HEIGHTS) as $band) {
-        foreach (BAND_WIDTHS as $w) {
-            foreach (['avif', 'webp'] as $ext) check(is_file("$public/img/$band-$w.$ext"), "band image $band-$w.$ext exists");
-        }
+foreach (array_keys(BAND_HEIGHTS) as $band) {
+    foreach (BAND_WIDTHS as $w) {
+        foreach (['avif', 'webp'] as $ext) check(is_file("$public/img/$band-$w.$ext"), "band image $band-$w.$ext exists");
     }
 }
 // duplicate titles/descriptions compete with each other in search results
@@ -232,7 +223,7 @@ foreach (LANGS as $l) {
     $ld = ld_event();
     check($ld['inLanguage'] === $l && $ld['url'] === SITE_URL . PAGES['home'][$l][0], "event $l: language and url");
     check($ld['startDate'] === '2027-03-05T16:00:00+01:00' && $ld['endDate'] === '2027-03-07T17:30:00+01:00', "event $l: dates");
-    // visible dates (hero, programme, share alt text) come from the same start/end
+    // visible dates (home, programme, share alt text) come from the same start/end
     $label = ['de' => '5.–7. März 2027', 'en' => '5–7 March 2027'][$l];
     check(event_dates() === $label, "event $l: date label '$label'");
     check(str_contains($pages[$l]['programm'], $label), "programm $l: date label in the lead");

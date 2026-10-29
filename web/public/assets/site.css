@@ -34,12 +34,25 @@
   --gap-l: 3rem;
   --gap-xl: 5rem;
   --nav-h: 3.5rem;
+
+  /* bands: core ratios in px of the 2x poster (BAND_HEIGHTS in render.php) */
+  --head-ratio: 2806 / 1438;
+  --foot-ratio: 2806 / 986;
+  --side: min(200px, 14%);
+  --head-max: 50vh; /* header at most half the viewport; scales, never crops */
+  --core-w: min(100% - 2 * var(--side), var(--head-max) * var(--head-ratio));
+  /* same column in viewport units (side = min(200px, 14vw)), for the footer overlap only */
+  --core-vw: min(max(72vw, 100vw - 400px), var(--head-max) * var(--head-ratio));
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-padding-top: calc(var(--nav-h) + 1rem); }
 body {
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--night);
   color: var(--sky);
   font: 400 1.0625rem/1.6 var(--body);
@@ -194,125 +207,66 @@ a { color: inherit; }
 .link .i { color: var(--gold); }
 .link:hover { text-decoration-color: var(--gold); }
 
-/* ------------------------------------------------------------ hero
-   The poster artwork is the hero. Its info panel was painted out to flat
-   night green, so the page background continues it without a seam.
-   Overlay geometry is in cqw of the core box (= artwork width); vertical
-   positions are poster-y / poster-width * 100. The stage sits in normal
-   flow, so a small screen extends the night green instead of overflowing.
-     split      wide landscape: poster column left (sticky), content right
-     landscape  narrow landscape: core height = viewport height
-     portrait   core width = viewport (4:5 artwork)
-     phone      dedicated 9:16 artwork                                     */
-.hero {
-  --core-ratio: 1403 / 1753;
-  --place-y: 78.33cqw;   /* 1099 / 1403 */
-  --date-y: 85.27cqw;    /* 1196 / 1403 */
-  --stage-y: 89.45cqw;   /* 1255 / 1403 */
-  --place-size: 7.4cqw;
-  --date-size: 3.75cqw;
-  --stage-w: 60%;
-}
-.hero__core {
-  position: relative;
-  display: flow-root;
-  aspect-ratio: var(--core-ratio);
-  margin-inline: auto;
-  container-type: inline-size;
-}
-.hero__art img { position: absolute; top: 0; left: 0; width: 100%; height: auto; }
-
-@media (min-aspect-ratio: 4/5) {
-  .hero__core { height: max(calc(100svh - var(--nav-h)), 40rem); width: auto; }
-}
-@media (min-aspect-ratio: 1/1) and (min-width: 48rem) and (min-height: 34rem) {
-  .home .layout {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: start;
-  }
-  .hero { --stage-w: 70%; }
-}
-@media (min-aspect-ratio: 1/1) and (min-width: 48rem) and (min-height: 46rem) {
-  .home .hero { position: sticky; top: var(--nav-h); }
-}
-@media (max-aspect-ratio: 4/5) {
-  .hero__core { width: 100%; }
-}
-@media (max-aspect-ratio: 3/5) {
-  .hero {
-    --core-ratio: 900 / 1600;
-    --place-y: 109.56cqw;  /* 986 / 900 */
-    --date-y: 118.4cqw;    /* 1065.6 / 900 */
-    --stage-y: 123.3cqw;   /* 1110 / 900 */
-    --place-size: 9.3cqw;
-    --date-size: 4.75cqw;
-    --stage-w: 90%;
-  }
-  .hero__stage { gap: .6rem; }
-  .hero__venue { font-size: .95rem; }
-  .hero__actions { flex-direction: column; gap: .15rem; }
-}
-@media (min-aspect-ratio: 4/5) and (max-height: 34rem) {
-  .hero__core { height: auto; width: min(100%, 34rem); }
-}
-
-.brush-text {
+/* ------------------------------------------------------------ bands
+   Header band (poster scene) below the sticky navigation, footer band
+   (poster plants) at the end of every page. The empty .band__core box sets
+   the band height; its width is the column min(100% - 2 x side bleed,
+   header height cap). The image files carry 0.6 x core of blurred side bleed
+   per side, so object-fit: cover lands the untouched core exactly on the
+   column. The band edges facing the content are baked to exactly --night:
+   no seam. Images and geometry: docs/build.md.                              */
+.band { position: relative; overflow: hidden; }
+.band img {
   position: absolute;
-  left: 50%;
-  margin: 0;
-  transform: translate(-50%, -50%);
-  font: 700 var(--size)/1 var(--hand);
-  color: var(--ink);
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: .18em;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
-.hero__place { top: var(--place-y); --size: var(--place-size); letter-spacing: .02em; }
-.hero__place .i { width: .78em; height: .78em; margin-top: -.12em; }
-.hero__date { top: var(--date-y); --size: var(--date-size); }
+.band__core { position: relative; width: var(--core-w); margin-inline: auto; }
+.band--head .band__core { aspect-ratio: var(--head-ratio); }
+.band--foot .band__core { aspect-ratio: var(--foot-ratio); }
 
-.hero__stage {
-  position: relative;
-  width: var(--stage-w);
-  margin: var(--stage-y) auto 0;
-  padding-bottom: var(--gap-m);
-  display: grid;
-  justify-items: center;
-  gap: clamp(.75rem, 2.6cqw, 1.25rem);
-  text-align: center;
+/* ------------------------------------------------------------ home welcome
+   The poster lettering is not in the band; title and facts are live text. */
+.welcome h1 { margin-bottom: var(--gap-s); font-size: clamp(2.4rem, 1.4rem + 4.4vw, 4.25rem); line-height: 1.05; }
+.welcome__sub {
+  display: block;
+  margin-top: .75rem;
+  font: 800 clamp(.85rem, .75rem + .5vw, 1.05rem)/1.4 var(--body);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--sky);
 }
-.hero__venue { margin: 0; font-size: clamp(1rem, 2.6cqw, 1.2rem); line-height: 1.4; }
-.hero__venue span { display: block; }
-.hero__actions {
+.welcome__when {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0 .5em;
+  margin: var(--gap-m) 0 var(--gap-s);
+  font: 700 clamp(1.6rem, 1.1rem + 2.2vw, 2.4rem)/1.2 var(--hand);
+  color: var(--sky);
+}
+.welcome__place { display: inline-flex; align-items: center; gap: .2em; }
+.welcome__place .i { width: .8em; height: .8em; color: var(--gold); }
+.welcome__when > span + span::before { content: "·"; margin-right: .5em; color: var(--gold); }
+.welcome__venue { margin: 0 0 var(--gap-m); color: var(--text-dim); }
+.welcome__venue span { display: block; }
+.welcome__actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: .5rem 1.25rem;
+  margin-bottom: var(--gap-m);
 }
-.hero__host { margin: 0; font-size: .92rem; color: var(--text-dim); }
-
-/* Browsers without container query units (Safari < 16, Chrome < 105):
-   the artwork spans the full viewport width, so 1cqw == 1vw exactly. The
-   split layout is skipped there; the page stacks like on a tablet.        */
-@supports not (width: 1cqw) {
-  .hero { --place-y: 78.33vw; --date-y: 85.27vw; --stage-y: 89.45vw; --place-size: 7.4vw; --date-size: 3.75vw; }
-  .hero__core { width: 100%; height: auto; }
-  .home .layout { display: block; }
-  .home .hero { position: static; }
-  .hero__stage { gap: 1rem; }
-  .hero__venue { font-size: 1.1rem; }
-}
-@supports not (width: 1cqw) {
-  @media (max-aspect-ratio: 3/5) {
-    .hero { --place-y: 109.56vw; --date-y: 118.4vw; --stage-y: 123.3vw; --place-size: 9.3vw; --date-size: 4.75vw; }
-  }
-}
+.welcome__host { margin: 0; font-size: .92rem; color: var(--text-dim); }
 
 /* ------------------------------------------------------------ content */
-main { container: content / inline-size; }
+main { flex: 1 0 auto; container: content / inline-size; }
 .section {
   width: min(100% - 2.5rem, 62rem);
   margin-inline: auto;
@@ -471,17 +425,24 @@ address { font-style: normal; margin-bottom: var(--gap-s); }
 .slot--demo strong, .slot--break strong, .slot--setup strong, .slot--teardown strong { font-weight: 400; color: var(--text-dim); }
 .legend { margin: var(--gap-m) 0 0; color: var(--text-dim); font-size: .95rem; }
 
-/* ------------------------------------------------------------ footer */
+/* ------------------------------------------------------------ footer
+   Footer text sits on night green; the plants band follows and its dark top
+   slides under the last lines, so the text stands among the plants. */
 .footer {
+  position: relative;
   display: grid;
   justify-items: center;
   gap: var(--gap-s);
-  padding: var(--gap-l) 1.25rem calc(var(--gap-l) + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--line);
+  padding: var(--gap-l) 1.25rem 0;
   text-align: center;
   color: var(--text-dim);
 }
-.footer img { width: 4.5rem; }
+.footer > :not(.band) { position: relative; z-index: 1; }
+.footer > img { width: 4.5rem; }
+.footer .band {
+  justify-self: stretch;
+  margin: calc(-.3 * var(--core-vw) / (var(--foot-ratio))) -1.25rem 0; /* 30 % of the band height */
+}
 .motto { margin: 0; font: 700 clamp(1.5rem, 3.4vw, 2rem)/1.2 var(--hand); color: var(--gold); }
 .footer__links { margin: 0; }
 .fineprint { margin: 0; font-size: .95rem; }
@@ -561,15 +522,6 @@ address { font-style: normal; margin-bottom: var(--gap-s); }
   }
 }
 
-/* one orchestrated moment: place and date are painted onto the brushes */
-@media (prefers-reduced-motion: no-preference) {
-  .brush-text { animation: paint-in .7s .15s both cubic-bezier(.2, .7, .2, 1); }
-  .hero__date { animation-delay: .35s; }
-  @keyframes paint-in {
-    from { opacity: 0; -webkit-clip-path: inset(0 100% 0 0); clip-path: inset(0 100% 0 0); }
-    to { opacity: 1; -webkit-clip-path: inset(0 0 0 0); clip-path: inset(0 0 0 0); }
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .btn { transition: none; }
 }

@@ -18,7 +18,7 @@ together“** (ohne Punkt), Instagram **@ruhracroconvention**.
 
 | Konstante | Inhalt |
 |---|---|
-| `SITE_URL`, `PREVIEW`, `DESIGN` | aus der Deploy-Konfiguration; Standard `https://ruhracro.de`, keine Vorschau, Design `classic` ([architektur.md](architektur.md#zwei-designs)) |
+| `SITE_URL`, `PREVIEW` | aus der Deploy-Konfiguration; Standard `https://ruhracro.de`, keine Vorschau ([deploy.md](deploy.md)) |
 | `EVENT` | Marke, Name, Claim, Start `2027-03-05T16:00+01:00`, Ende `2027-03-07T17:30+01:00`, Buchungs-URL, Instagram, Veranstalter (DE/EN). Angezeigtes Datum („5.–7. März 2027“) entsteht aus Start/Ende über `event_dates()` in `render.php` – nur Start/Ende pflegen |
 | `HOSTING` | Hetzner als Auftragsverarbeiter, Log-Speicherdauer 7 Tage, `confirmed` = AV-Vertrag und Löschregel in konsoleH erledigt ([recht.md](recht.md)) |
 | `PROVIDER` | Betreiber der Website und Organisator: Impressum, Datenschutz, Footer; aus `web/lib/provider.php` (nicht im Repo, siehe [deploy.md](deploy.md)) |

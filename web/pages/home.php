@@ -1,43 +1,22 @@
 <?php
 declare(strict_types=1);
 
-page_head('home', [ld_event(), ld_website()], 'home');
-if (DESIGN === 'classic'): ?>
-<div class="layout">
-<header class="hero">
-  <div class="hero__core">
-    <picture class="hero__art">
-      <source media="(max-aspect-ratio: 3/5)"
-              srcset="<?= e(public_url('/img/art-9x16-800.webp')) ?> 800w, <?= e(public_url('/img/art-9x16-1200.webp')) ?> 1200w, <?= e(public_url('/img/art-9x16-1800.webp')) ?> 1800w"
-              sizes="100vw" width="1800" height="3200">
-      <img src="<?= e(public_url('/img/art-4x5-1400.webp')) ?>"
-           srcset="<?= e(public_url('/img/art-4x5-1400.webp')) ?> 1400w, <?= e(public_url('/img/art-4x5-2000.webp')) ?> 2000w, <?= e(public_url('/img/art-4x5-2806.webp')) ?> 2806w"
-           sizes="(max-aspect-ratio: 4/5) 100vw, max(80svh, 32rem)"
-           width="2806" height="3506" alt="" fetchpriority="high">
-    </picture>
-
-    <h1 class="visually-hidden"><?= e(EVENT['name']) ?> – <?= e(L(EVENT['subtitle'])) ?> <?= t('in Essen', 'in Essen, Germany') ?></h1>
-    <p class="brush-text hero__place"><?= icon('pin') ?> <?= e(VENUE['city']) ?></p>
-    <p class="brush-text hero__date"><?= event_dates(true) ?></p>
-
-    <div class="hero__stage">
-<?php event_facts('hero'); ?>
-    </div>
-  </div>
-</header>
-<?php endif; ?>
-
+page_head('home', [ld_event(), ld_website()]);
+?>
 <main id="inhalt">
-<?php if (DESIGN === 'scene'): /* header band comes from page_head(); facts as text below it */ ?>
   <section class="section welcome" aria-labelledby="titel">
     <h1 id="titel"><?= e(EVENT['name']) ?> <span class="welcome__sub"><?= e(L(EVENT['subtitle'])) ?> <?= t('in Essen', 'in Essen, Germany') ?></span></h1>
     <p class="welcome__when">
       <span class="welcome__place"><?= icon('pin') ?> <?= e(VENUE['city']) ?></span>
       <span><?= event_dates(true) ?></span>
     </p>
-<?php event_facts('welcome'); ?>
+    <p class="welcome__venue"><span><?= e(L(EVENT['days_label'])) ?></span> <span><?= e(VENUE['name']) ?>, <?= e(VENUE['zip'] . ' ' . VENUE['city']) ?></span></p>
+    <div class="welcome__actions">
+      <?= book_button() ?>
+      <a class="link" href="<?= e(page_url('programm')) ?>"><?= t('Programm ansehen', 'See the programme') ?></a>
+    </div>
+    <p class="welcome__host"><?= t('Veranstalter', 'Hosted by') ?>: <?= e(L(EVENT['organizer'])) ?></p>
   </section>
-<?php endif; ?>
   <section class="section" aria-labelledby="festival">
     <h2 id="festival"><?= t('Drei Tage Acro im Ruhrgebiet', 'Three days of acro in the Ruhr area') ?></h2>
     <p class="lead"><?= t(
@@ -99,7 +78,4 @@ if (DESIGN === 'classic'): ?>
     </div>
   </section>
 </main>
-<?php if (DESIGN === 'classic'): ?>
-</div>
-<?php endif;
-page_foot();
+<?php page_foot();

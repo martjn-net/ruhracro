@@ -90,16 +90,5 @@ Andere Ziele: beliebige URL mit Unterordner an `tools/bundle.sh` übergeben;
 ohne `--preview` entfallen Banner und `noindex`. Die Konfiguration landet als
 `_app/lib/deploy.php` im Paket (Vorlage: `web/lib/deploy.example.php`).
 
-## Zweites Design parallel (martjn.net/acro-scene)
-
-Solange nicht entschieden ist, welches Design live geht, laufen beide als
-Vorschau nebeneinander. Das Paket enthält nur die Bilder seines Designs.
-
-```bash
-tools/bundle.sh https://martjn.net/acro --preview                      # classic → dist/acro/
-tools/bundle.sh https://martjn.net/acro-scene --preview --design scene # scene   → dist/acro-scene/
-```
-
-Upload wie oben, nur in `public_html/acro-scene/`. Für den Go-live auf
-`ruhracro.de` gilt dasselbe: `design` in `web/lib/deploy.php` setzen
-(`'design' => 'scene'`) oder weglassen (`classic`).
+Die frühere Parallel-Vorschau `public_html/acro-scene/` wird nicht mehr
+gebraucht und kann gelöscht werden.

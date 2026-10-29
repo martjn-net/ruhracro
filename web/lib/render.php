@@ -153,12 +153,11 @@ function asset(string $path): string
 
 /* ---------------------------------------------------------------- layout */
 
-/** $id: key of PAGES, or '404'. Opens the document up to and including the header. */
-function page_head(string $id, array $jsonld = [], string $bodyClass = ''): void
+/** $id: key of PAGES, or '404'. Opens the document up to and including the header band. */
+function page_head(string $id, array $jsonld = []): void
 {
     $found = $id !== '404';
     $title = $found ? PAGES[$id][lang()][2] : tr('Seite nicht gefunden', 'Page not found') . ' – ' . EVENT['brand'];
-    $bodyClass = trim($bodyClass . (DESIGN === 'scene' ? ' scene' : ''));
     header('Content-Type: text/html; charset=utf-8');
     ?>
 <!DOCTYPE html>
@@ -177,14 +176,11 @@ function page_head(string $id, array $jsonld = [], string $bodyClass = ''): void
 <?php /* same URL as the @font-face in site.css, otherwise the font loads twice */ ?>
 <link rel="preload" href="<?= e(public_url('/fonts/kalam-700-latin.woff2')) ?>" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="<?= e(asset('assets/site.css')) ?>">
-<?php if (DESIGN === 'scene'): ?>
-<link rel="stylesheet" href="<?= e(asset('assets/scene.css')) ?>">
-<?php endif; ?>
 <?php foreach ($jsonld as $block): ?>
 <script type="application/ld+json"><?= json_encode($block, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) ?></script>
 <?php endforeach; ?>
 </head>
-<body<?= $bodyClass ? ' class="' . e($bodyClass) . '"' : '' ?>>
+<body>
 <a class="skip" href="#inhalt"><?= t('Zum Inhalt springen', 'Skip to content') ?></a>
 <?php if (PREVIEW): ?>
 <p class="preview"><?= tr(
@@ -194,7 +190,7 @@ function page_head(string $id, array $jsonld = [], string $bodyClass = ''): void
 <?php endif; ?>
 <?php
     site_nav($id);
-    if (DESIGN === 'scene') band('head');
+    band('head');
 }
 
 /** Description, canonical, hreflang and Open Graph of a page. */
@@ -226,13 +222,13 @@ function seo_meta(string $id): void
 <?php
 }
 
-/** Scene design band files (tools/build_assets.py): widths and the height of the widest file. */
+/** Band image files (tools/build_assets.py): widths and the height of the widest file. */
 const BAND_WIDTHS = [1600, 2600, 4000, 6173];
 const BAND_HEIGHTS = ['head' => 1438, 'foot' => 986];
 
 /**
- * Scene design: header or footer band, a decorative poster crop with baked
- * side bleed (docs/build.md). The empty core box sizes the band; scene.css
+ * Header or footer band on every page: a decorative poster crop with baked
+ * side bleed (docs/build.md). The empty core box sizes the band; site.css
  * lays the picture over it with object-fit: cover.
  * sizes = 2.2 x core width; core = min(max(72vw, 100vw - 400px), 50vh x 2806/1438).
  */
@@ -307,7 +303,7 @@ function page_foot(): void
 <?php endforeach; ?>
   </nav>
   <p class="fineprint"><?= e(EVENT['name']) ?></p>
-<?php if (DESIGN === 'scene') band('foot'); ?>
+<?php band('foot'); ?>
 </footer>
 </body>
 </html>
@@ -420,19 +416,6 @@ function ld_breadcrumb(string $id): array
 }
 
 /* --------------------------------------------------------------- content */
-
-/** Home, both designs: days and venue, booking and programme links, host; $block = BEM block. */
-function event_facts(string $block): void
-{
-    ?>
-<p class="<?= $block ?>__venue"><span><?= e(L(EVENT['days_label'])) ?></span> <span><?= e(VENUE['name']) ?>, <?= e(VENUE['zip'] . ' ' . VENUE['city']) ?></span></p>
-<div class="<?= $block ?>__actions">
-  <?= book_button() ?>
-  <a class="link" href="<?= e(page_url('programm')) ?>"><?= t('Programm ansehen', 'See the programme') ?></a>
-</div>
-<p class="<?= $block ?>__host"><?= t('Veranstalter', 'Hosted by') ?>: <?= e(L(EVENT['organizer'])) ?></p>
-<?php
-}
 
 /** "16:00–17:20", "vor 16:00" or "ab 17:30" as HTML. */
 function slot_time(?string $from, ?string $to): string

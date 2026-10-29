@@ -10,7 +10,6 @@ Webhosting. Offene Aufgaben: [TODO.md](../TODO.md).
 | [inhalte.md](inhalte.md) | Faktenquellen, Timetable, Tickets, Pflege |
 | [recht.md](recht.md) | Rollen (Veranstalter, Betreiber), Impressum, Datenschutz |
 | [architektur.md](architektur.md) | Entscheidung PHP, Struktur, Mehrsprachigkeit, URLs, Sicherheit, Tests |
-| [zwei-designs.md](zwei-designs.md) | Stand der zwei Designs `classic`/`scene`: bauen, ansehen, testen, offene Punkte |
 | [design.md](design.md) | Gestaltung, Tokens, Navigation, Flaggen-Toggle, Layout |
 | [build.md](build.md) | Bilder und Schriften bauen, Quellen, Reproduzierbarkeit |
 | [deploy.md](deploy.md) | Go-live und Upload auf Hetzner |

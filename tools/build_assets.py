@@ -1,7 +1,6 @@
-"""Cut the poster into seamless web assets for both designs.
+"""Cut the poster into seamless web assets.
 
-Inputs : tools/.cache/poster45@2x.png, tools/.cache/poster916@2x.png
-         (EDSR 2x of quelle/ and exporte/, see upscale.py)
+Inputs : tools/.cache/poster45@2x.png (EDSR 2x of quelle/, see upscale.py)
          quelle/ruhr-acro-convention-2027.jpg (share and event images)
          web/public/fonts/*.woff2 (text on the social image; fetched by build.sh)
 Outputs: web/public/img/*  (docs/build.md)
@@ -24,7 +23,7 @@ S = 2.0  # scale of the upscaled cache
 BG = np.array([0, 25, 19], np.float32)  # panel green, measured: #001913
 BG_RGB = tuple(int(v) for v in BG)
 
-# Design scene, header band: scene from just above the sun (top edge y~385),
+# Header band: scene from just above the sun (top edge y~385),
 # fading into panel green right under the acrobats; the "Essen" brush that
 # starts at y=1043 becomes a soft shadow. Footer band: the bottom plants with
 # their full sprays (from below the venue line, y=1278), rising out of panel
@@ -111,78 +110,7 @@ def stage_mask(img, zone, pad=20, feather=10, tol=40):
     return np.clip(cv2.GaussianBlur(m.astype(np.float32), (0, 0), feather * S), 0, 1)
 
 
-def rounded_rect(shape, box, r, feather):
-    x0, y0, x1, y1 = box
-    m = np.zeros(shape, np.uint8)
-    cv2.rectangle(m, (x0 + r, y0), (x1 - r, y1), 1, -1)
-    cv2.rectangle(m, (x0, y0 + r), (x1, y1 - r), 1, -1)
-    for cx, cy in ((x0 + r, y0 + r), (x1 - r, y0 + r), (x0 + r, y1 - r), (x1 - r, y1 - r)):
-        cv2.circle(m, (cx, cy), r, 1, -1)
-    return np.clip(cv2.GaussianBlur(m.astype(np.float32), (0, 0), feather), 0, 1)
-
-
-def reach(mask, axis, reverse, dist):
-    """True where a mask pixel lies within `dist` px along axis/direction."""
-    m = np.flip(mask, axis) if reverse else mask
-    n = m.shape[axis]
-    shape = [1, 1]
-    shape[axis] = n
-    idx = np.arange(n, dtype=np.float32).reshape(shape)
-    last = np.maximum.accumulate(np.where(m, idx, -1e9), axis=axis)
-    res = (idx - last) <= dist
-    return np.flip(res, axis) if reverse else res
-
-
-def lettering_mask(img, box, ref_box, tol=40):
-    """Dark lettering enclosed by a painted stroke of the reference colour."""
-    x0, y0, x1, y1 = px(box)
-    c = img[y0:y1, x0:x1]
-    ref_rgb = np.median(crop(img, ref_box).reshape(-1, 3), 0)
-    ref = cv2.cvtColor(ref_rgb.reshape(1, 1, 3).astype(np.uint8), cv2.COLOR_RGB2LAB).reshape(3)
-    d = np.linalg.norm(cv2.cvtColor(c, cv2.COLOR_RGB2LAB).astype(np.float32) - ref, axis=-1)
-    paint = d < tol
-    enclosed = (reach(paint, 0, False, 50 * S) & reach(paint, 0, True, 50 * S)
-                & reach(paint, 1, False, 260 * S) & reach(paint, 1, True, 260 * S))
-    text = (~paint & enclosed).astype(np.uint8)
-    _, lab, st, _ = cv2.connectedComponentsWithStats(text, 8)
-    text[~off_border(st, text.shape)[lab]] = 0
-    k = int(7 * S) | 1
-    full = np.zeros(img.shape[:2], np.uint8)
-    full[y0:y1, x0:x1] = cv2.dilate(text, np.ones((k, k), np.uint8))
-    return full
-
-
-# ---------------------------------------------------------------- design classic
-def poster_art(img, brushes, venue, stage_top, zone, stage, fade, stage_feather=18):
-    """Turn the poster into a backdrop for live HTML text.
-
-    - lettering inside the place/date brushes is inpainted; the empty strokes
-      stay painted on the grass, HTML text is set on top of them
-    - the venue line is erased
-    - everything below `stage_top` inside `zone`/`stage` becomes flat panel
-      green so HTML content can flow there; the leaf frame stays untouched
-    - the bottom edge fades into panel green so the page continues seamlessly
-    """
-    out = img.copy()
-    for box, ref in brushes:
-        out = cv2.inpaint(out, lettering_mask(out, box, ref) * 255, int(7 * S), cv2.INPAINT_TELEA)
-    x0, y0, x1, y1 = px(venue)
-    sub = out[y0:y1, x0:x1]
-    vm = np.zeros(out.shape[:2], np.uint8)
-    vm[y0:y1, x0:x1] = (lum(sub) > 70) & ((sub.max(-1).astype(int) - sub.min(-1)) < 90)
-    k = int(5 * S) | 1
-    out[cv2.dilate(vm, np.ones((k, k), np.uint8)) > 0] = BG.astype(np.uint8)
-    m = stage_mask(out, zone, pad=16, tol=22)
-    sx0, sy0, sx1, sy1, sr = px(stage)
-    m = np.maximum(m, rounded_rect(m.shape, (sx0, sy0, sx1, sy1), sr, stage_feather * S))
-    y = np.arange(img.shape[0])[:, None] / S
-    m = m * smooth((y - stage_top) / 4)  # never touch the brushes above
-    f = to_bg(out, m[..., None])
-    t = smooth((y - fade[0]) / (fade[1] - fade[0]))[..., None]
-    return u8(to_bg(f, t))
-
-
-# ---------------------------------------------------------------- design scene
+# ---------------------------------------------------------------- bands
 def vfade(img, box, fade, top, lift=0.0):
     """Fade a cropped band into panel green towards its bottom (or top) edge.
     `lift` (per column, 1x px) starts the fade earlier, e.g. in the bleed."""
@@ -258,7 +186,7 @@ def foot_band(img):
     return u8(vfade(bleed(core), FOOT, FOOT_FADE, top=True))
 
 
-# ---------------------------------------------------------------- shared
+# ---------------------------------------------------------------- icons, share images
 def medallion(img, box, rim=6):
     """Cut a round icon medallion.
 
@@ -371,35 +299,16 @@ def main():
     for old in OUT.glob("*"):
         old.unlink()
     p45 = np.array(Image.open(CACHE / "poster45@2x.png").convert("RGB"))
-    p916 = np.array(Image.open(CACHE / "poster916@2x.png").convert("RGB"))
     report = []
 
-    # Design classic, art direction: 4:5 for landscape and tablets (sides fade
-    # via CSS mask), 9:16 for phones.
-    art45 = poster_art(
-        p45,
-        brushes=[((440, 1040, 975, 1160), (850, 1060, 900, 1080)),
-                 ((430, 1156, 980, 1240), (450, 1190, 470, 1205))],
-        venue=(470, 1240, 935, 1278), stage_top=1240,
-        zone=(290, 1238, 1115, 1745), stage=(300, 1240, 1105, 1700, 110), fade=(1600, 1753),
-        stage_feather=22)
-    art916 = poster_art(
-        p916,
-        brushes=[((170, 936, 730, 1033), (600, 955, 630, 970)),
-                 ((170, 1033, 730, 1100), (250, 1060, 270, 1072))],
-        venue=(195, 1102, 705, 1135), stage_top=1100,
-        zone=(50, 1098, 850, 1595), stage=(118, 1100, 782, 1545, 70), fade=(1450, 1600))
-    report += [save(art45, f"art-4x5-{w}.webp", w) for w in (2806, 2000, 1400)]
-    report += [save(art916, f"art-9x16-{w}.webp", w) for w in (1800, 1200, 800)]
-
-    # Design scene: header and footer bands with baked side bleed; widths are
-    # the full band incl. bleed.
+    # Header and footer bands with baked side bleed; widths are the full band
+    # incl. bleed.
     for name, band in (("head", head_band(p45)), ("foot", foot_band(p45))):
         for w in BAND_WIDTHS:
             report.append(save(band, f"{name}-{w}.avif", w, quality=75))
             report.append(save(band, f"{name}-{w}.webp", w, quality=90))
 
-    # Both designs: icon medallions and lotus from the 4:5 poster.
+    # Icon medallions and lotus.
     for name, box in {"workshops": (312, 1272, 492, 1446),
                       "community": (604, 1272, 792, 1446),
                       "jams": (900, 1272, 1080, 1446)}.items():

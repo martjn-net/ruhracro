@@ -6,12 +6,6 @@ Stand 2026-10-27. Technisch fertig: 12 Seiten (DE + EN), Tests grün
 
 ## Vor dem Go-live (Pflicht)
 
-- [ ] **Design entscheiden:** `classic` (Poster-Hero, Vorschau martjn.net/acro)
-      oder `scene` (Header-/Footer-Band, Vorschau martjn.net/acro-scene).
-      Danach `design` in `web/lib/deploy.php` des Live-Servers setzen; das
-      andere Design kann im Code bleiben oder später entfernt werden
-      ([docs/architektur.md](docs/architektur.md#zwei-designs)).
-
 ### Prio 1 – Impressums-Anschrift klären (blockiert alles Rechtliche)
 
 - [ ] **Anschrift fürs Impressum ohne Privatadresse** – Reihenfolge:
