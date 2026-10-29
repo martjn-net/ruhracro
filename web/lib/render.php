@@ -249,18 +249,17 @@ function band(string $name): void
 <?php
 }
 
+/** Main navigation: content pages only; Impressum and Datenschutz live in the footer. */
 function site_nav(string $id): void
 {
-    $legal = in_array($id, LEGAL_PAGES, true);
     ?>
 <nav class="nav" aria-label="<?= t('Hauptnavigation', 'Main navigation') ?>">
   <a class="nav__brand" href="<?= e(page_url('home')) ?>"<?= $id === 'home' ? ' aria-current="page"' : '' ?>>Ruhr Acro</a>
   <ul class="nav__links">
 <?php foreach (PAGES as $p => $page):
-        if ($p === 'home') continue; ?>
-    <li<?= in_array($p, LEGAL_PAGES, true) ? ' class="nav__legal"' : '' ?>><a href="<?= e(page_url($p)) ?>"<?= $p === $id ? ' aria-current="page"' : '' ?>><?= e($page[lang()][1]) ?></a></li>
+        if ($p === 'home' || in_array($p, LEGAL_PAGES, true)) continue; ?>
+    <li><a href="<?= e(page_url($p)) ?>"<?= $p === $id ? ' aria-current="page"' : '' ?>><?= e($page[lang()][1]) ?></a></li>
 <?php endforeach; ?>
-    <li class="nav__legal-compact"><a href="<?= e(page_url('impressum')) ?>"<?= $legal ? ' aria-current="page"' : '' ?> aria-label="<?= t('Impressum und Datenschutz', 'Legal notice and privacy') ?>"><?= t('Rechtliches', 'Legal') ?></a></li>
   </ul>
 <?php lang_toggle($id); ?>
   <?= book_button('btn btn--nav', false) ?>

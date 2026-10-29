@@ -16,6 +16,10 @@ page_head('anreise', [ld_breadcrumb('anreise')]);
                'The hall is on the Essen campus of the University of Duisburg-Essen in Essen city centre, about 150 m east of Viehofer Platz. The entrance is on Waldthausenstraße.') ?></p>
       <p><?= ext(osm_url(), tr('Route planen', 'Plan your route'), 'btn', icon('map')) ?></p>
 
+      <h2><?= t('Parken', 'Parking') ?></h2>
+      <p><?= t('Rund 40 öffentliche, kostenlose Parkplätze liegen höchstens eine Minute zu Fuß entfernt, teilweise direkt vor der Halle; in der Umgebung gibt es weitere. Für die Convention sind keine Parkplätze reserviert.',
+               'About 40 free public parking spaces are at most a one-minute walk away, some right in front of the hall; there are more in the surrounding area. No parking spaces are reserved for the convention.') ?></p>
+
       <h2><?= t('Gut zu wissen für dein Wochenende', 'Good to know for your weekend') ?></h2>
       <ul>
 <?php if (lang() === 'en'): ?>

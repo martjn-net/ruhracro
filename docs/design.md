@@ -48,17 +48,16 @@ Schrift: **Kalam 700** für Titel, Ort, Datum, Überschriften; **Nunito**
 | `/` · `/en` | Titel, Untertitel, Ort und Datum, Halle, Buttons, Zeile „Veranstalter: Hochschulsport …“; Festival, Angebot, Level, Inhalte, Fokus Standing Acro/Acroyoga |
 | `/programm` · `/en/programme` | kompletter Timetable als Text, je Tag eine `h2` |
 | `/tickets` · `/en/tickets` | Hinweis „Verkauf nur über die Universität“, Early Bird (ausgebucht), Regular, Preisgruppen, Helfer, Shirt, Verpflegung |
-| `/anreise` · `/en/directions` | Adresse, Eingang, „Route planen“ (OpenStreetMap), Hinweise fürs Wochenende |
+| `/anreise` · `/en/directions` | Adresse, Eingang, „Route planen“ (OpenStreetMap), Parken (ca. 40 öffentliche kostenlose Plätze in ≤ 1 Minute Fußweg, keine reservierten), Hinweise fürs Wochenende |
 | `/impressum` · `/en/legal-notice`, `/datenschutz` · `/en/privacy` | Pflichtangaben; EN als Übersetzung, DE verbindlich |
 
 Navigation dauerhaft sichtbar (sticky): Marke, Programm, Tickets, Anreise,
-Impressum, Datenschutz, **Flaggen-Toggle** (Deutschland- und UK-Flagge als
-SVG, aktive Sprache hell hinterlegt, Desktop mit „DE“/„EN“), Button „Jetzt buchen“.
+**Flaggen-Toggle** (Deutschland- und UK-Flagge als SVG, aktive Sprache hell
+hinterlegt, Desktop mit „DE“/„EN“), Button „Jetzt buchen“. Impressum und
+Datenschutz stehen nur im Footer (auf jeder Seite).
 
 - Unter 52rem rutschen die Links in eine zweite Zeile (`--nav-h: 6.25rem`);
   Toggle und Button bleiben in Zeile 1, nur Flaggen ohne Kürzel.
-- Unter 27rem werden Impressum und Datenschutz zu „Rechtliches“ / „Legal“
-  (Link aufs Impressum); Datenschutz bleibt im Footer erreichbar.
 - Unter 24rem engerer Abstand, unter 22,4rem (< 360 px) nur die Flagge der
   anderen Sprache. Geprüft 320–430 px: Marke, Toggle, Button immer in einer Zeile.
 - Footer jeder Seite: Lotus, Claim, Instagram, **Veranstalter** (Hochschulsport

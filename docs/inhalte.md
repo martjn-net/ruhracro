@@ -14,6 +14,11 @@ Vom Owner bestätigt (Chat 2026-10-27): Domain **ruhracro.de**, Veranstalter
 **Hochschulsport der Universität Duisburg-Essen**, Claim **„Move together. Grow
 together“** (ohne Punkt), Instagram **@ruhracroconvention**.
 
+Vom Owner angegeben (Chat 2026-10-29), steht direkt in `web/pages/anreise.php`:
+ca. 40 öffentliche, kostenlose Parkplätze höchstens eine Minute zu Fuß,
+teilweise direkt vor der Halle, in der Umgebung weitere; keine Parkplätze
+exklusiv gemietet.
+
 ## Daten in `web/lib/event.php`
 
 | Konstante | Inhalt |

@@ -201,5 +201,5 @@ const PAGES = [
     ],
 ];
 
-/** Pages shown in the small legal group of the navigation. */
+/** Legal pages: linked in the footer only, not in the main navigation. */
 const LEGAL_PAGES = ['impressum', 'datenschutz'];

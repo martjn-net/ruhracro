@@ -113,9 +113,9 @@ foreach (PAGES as $id => $page) {
             check($l === 'en' ? $isEn : !$isEn, "$where: internal link $href in page language");
         }
 
-        // navigation: always present, legal pages always linked
+        // legal pages: always linked in the footer, not in the main navigation
         foreach (LEGAL_PAGES as $legal) {
-            check(str_contains($nav, 'href="' . page_url($legal, $l) . '"'), "$where: nav links $legal");
+            check(!str_contains(str_replace($toggle, '', $nav), 'href="' . page_url($legal, $l) . '"'), "$where: nav without $legal");
             check(str_contains($footer, 'href="' . page_url($legal, $l) . '"'), "$where: footer links $legal");
         }
         // preview deployments: banner and noindex on every page; production: neither

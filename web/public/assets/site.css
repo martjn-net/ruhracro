@@ -135,7 +135,6 @@ a { color: inherit; }
 }
 .nav__links a:hover { color: var(--sky); background: rgba(253, 248, 236, .06); }
 .nav__links a[aria-current="page"] { color: var(--sky); background: rgba(253, 248, 236, .1); }
-.nav__legal a { font-weight: 400; font-size: .9rem; }
 
 /* language toggle: two flag links (no JS); the current language is marked */
 .lang {
@@ -461,8 +460,7 @@ address { font-style: normal; margin-bottom: var(--gap-s); }
 .footer__legal a:hover { text-decoration: underline; }
 
 /* ------------------------------------------------------------ responsive
-   Below 52rem the links move to a second row. Below 27rem Impressum and
-   Datenschutz merge into one entry, so every link stays visible.           */
+   Below 52rem the links move to a second row.                              */
 @media (max-width: 52rem) {
   .nav { flex-wrap: wrap; padding-bottom: 0; }
   .nav__brand { font-size: 1.2rem; }
@@ -474,20 +472,9 @@ address { font-style: normal; margin-bottom: var(--gap-s); }
     width: calc(100% + 2rem);
     margin: 0 -1rem;
     padding: 0 .5rem;
-    -webkit-mask-image: linear-gradient(90deg, #000 92%, transparent);
-            mask-image: linear-gradient(90deg, #000 92%, transparent);
   }
   .nav__links a { padding: 0 .55rem; font-size: .93rem; }
-  .nav__legal a { font-size: .85rem; }
   :root { --nav-h: 6.25rem; }
-}
-.nav__legal-compact { display: none; }
-@media (max-width: 27rem) {
-  .nav__legal { display: none; }
-  .nav__legal-compact { display: block; }
-  .nav__legal-compact a { font-size: .85rem; font-weight: 400; }
-  .nav__links { -webkit-mask-image: none; mask-image: none; }
-  .nav__links a { padding: 0 .45rem; }
 }
 /* below 360px both flags plus the button do not fit next to the brand:
    show only the flag of the other language (still a toggle) */
